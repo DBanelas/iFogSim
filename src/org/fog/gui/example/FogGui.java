@@ -445,7 +445,7 @@ public class FogGui extends JFrame {
         
         
         
-        //----- Start Initialize menu and tool bar -----
+        //----- Start Initialize menu and toolbar -----
         manualMode.setSelected(true);
         mode = "m";
         

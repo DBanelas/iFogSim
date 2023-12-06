@@ -26,9 +26,10 @@ public class Sensor extends SimEntity{
 	private int controllerId;
 	private Application app;
 	private double latency;
-
 	private int transmissionStartDelay = Config.TRANSMISSION_START_DELAY;
-	
+	private int totalTuplesSent;
+	private ArrayList<Integer> sentTupleIds;
+
 	public Sensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, 
 			Distribution transmitDistribution, int cpuLength, int nwLength, String tupleType, String destModuleName) {
 		super(name);
@@ -36,6 +37,8 @@ public class Sensor extends SimEntity{
 		this.gatewayDeviceId = gatewayDeviceId;
 		this.geoLocation = geoLocation;
 		this.outputSize = 3;
+		this.totalTuplesSent = 0;
+		this.sentTupleIds = new ArrayList<>();
 		this.setTransmitDistribution(transmitDistribution);
 		setUserId(userId);
 		setDestModuleName(destModuleName);
@@ -47,6 +50,8 @@ public class Sensor extends SimEntity{
 	public Sensor(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, 
 			Distribution transmitDistribution, String tupleType) {
 		super(name);
+		this.totalTuplesSent = 0;
+		this.sentTupleIds = new ArrayList<>();
 		this.setAppId(appId);
 		this.gatewayDeviceId = gatewayDeviceId;
 		this.geoLocation = geoLocation;
@@ -70,12 +75,22 @@ public class Sensor extends SimEntity{
 	public Sensor(String name, String tupleType, int userId, String appId, Distribution transmitDistribution) {
 		super(name);
 		this.setAppId(appId);
+		this.totalTuplesSent = 0;
+		this.sentTupleIds = new ArrayList<>();
 		this.setTransmitDistribution(transmitDistribution);
 		setTupleType(tupleType);
-		setSensorName(tupleType);
+		setSensorName(name);
 		setUserId(userId);
 	}
-	
+
+	public int getTotalTuplesSent() {
+		return totalTuplesSent;
+	}
+
+	public ArrayList<Integer> getSentTupleIds() {
+		return sentTupleIds;
+	}
+
 	public void transmit(){
 		AppEdge _edge = null;
 		for(AppEdge edge : getApp().getEdges()){
@@ -93,7 +108,8 @@ public class Sensor extends SimEntity{
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(getSensorName());
 		Logger.debug(getName(), "Sending tuple with tupleId = "+tuple.getCloudletId());
-
+		this.totalTuplesSent++;
+		this.sentTupleIds.add(tuple.getCloudletId());
 		tuple.setDestinationDeviceId(getGatewayDeviceId());
 
 		int actualTupleId = updateTimings(getSensorName(), tuple.getDestModuleName());

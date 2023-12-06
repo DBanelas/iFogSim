@@ -19,10 +19,12 @@ public class Actuator extends SimEntity{
 	private int userId;
 	private String actuatorType;
 	private Application app;
+	private int totalTuplesArrived;
 	
 	public Actuator(String name, int userId, String appId, int gatewayDeviceId, double latency, GeoLocation geoLocation, String actuatorType, String srcModuleName) {
 		super(name);
 		this.setAppId(appId);
+		this.totalTuplesArrived = 0;
 		this.gatewayDeviceId = gatewayDeviceId;
 		this.geoLocation = geoLocation;
 		setUserId(userId);
@@ -33,6 +35,7 @@ public class Actuator extends SimEntity{
 	public Actuator(String name, int userId, String appId, String actuatorType) {
 		super(name);
 		this.setAppId(appId);
+		this.totalTuplesArrived = 0;
 		setUserId(userId);
 		setActuatorType(actuatorType);
 	}
@@ -51,9 +54,14 @@ public class Actuator extends SimEntity{
 		}		
 	}
 
+	public int getTotalTuplesArrived() {
+		return totalTuplesArrived;
+	}
+
 	private void processTupleArrival(SimEvent ev) {
 		Tuple tuple = (Tuple)ev.getData();
 		Logger.debug(getName(), "Received tuple "+tuple.getCloudletId()+"on "+tuple.getDestModuleName());
+		totalTuplesArrived++;
 		String srcModule = tuple.getSrcModuleName();
 		String destModule = tuple.getDestModuleName();
 		Application app = getApp();

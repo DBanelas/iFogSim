@@ -8,37 +8,50 @@ import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.entities.Tuple;
 
+/**
+ * Singleton class used to keep track of time in the simulation.
+ */
 public class TimeKeeper {
-
 	private static TimeKeeper instance;
-	
 	private long simulationStartTime;
-	private int count; 
+	private int count; //Variable to create unique IDs wherever needed (e.g. TupleID, AppLoopID)
 	private Map<Integer, Double> emitTimes;
 	private Map<Integer, Double> endTimes;
-	private Map<Integer, List<Integer>> loopIdToTupleIds;
 	private Map<Integer, Double> tupleIdToCpuStartTime;
 	private Map<String, Double> tupleTypeToAverageCpuTime;
 	private Map<String, Integer> tupleTypeToExecutedTupleCount;
-	
+	private Map<Integer, List<Integer>> loopIdToTupleIds;
 	private Map<Integer, Double> loopIdToCurrentAverage;
 	private Map<Integer, Integer> loopIdToCurrentNum;
-
 	private Map<Integer, Integer> loopIdToLatencyQoSSuccessCount = new HashMap<>();
-
 	// loopID -> < Microservice -> < deviceID, <requestCount,totalExecutionTime > >
 	private Map<Integer, Map<String, Map<Integer, Pair<Integer, Double>>>> costCalcData = new HashMap<>();
 	// last execution time
 	private Map<Integer, Double> tupleIdToExecutionTime = new HashMap<>();
-	
+
+	/**
+	 * Method to create and return the singleton instance of the TimeKeeper
+	 * @return the singleton instance of the TimeKeeper
+	 */
 	public static TimeKeeper getInstance(){
 		if(instance == null)
 			instance = new TimeKeeper();
 		return instance;
 	}
-	
-	public int getUniqueId(){
-		return count++;
+
+	/**
+	 * Private method to create a TimeKeeper instance.
+	 */
+	private TimeKeeper(){
+		count = 1;
+		this.emitTimes = new HashMap<>();
+		this.endTimes = new HashMap<>();
+		this.loopIdToTupleIds = new HashMap<>();
+		this.tupleTypeToAverageCpuTime = new HashMap<>();
+		this.tupleTypeToExecutedTupleCount = new HashMap<>();
+		this.tupleIdToCpuStartTime = new HashMap<>();
+		this.loopIdToCurrentAverage = new HashMap<>();
+		this.loopIdToCurrentNum = new HashMap<>();
 	}
 	
 	public void tupleStartedExecution(Tuple tuple){
@@ -62,23 +75,13 @@ public class TimeKeeper {
 	public Map<Integer, List<Integer>> loopIdToTupleIds(){
 		return getInstance().getLoopIdToTupleIds();
 	}
-	
-	private TimeKeeper(){
-		count = 1;
-		setEmitTimes(new HashMap<Integer, Double>());
-		setEndTimes(new HashMap<Integer, Double>());
-		setLoopIdToTupleIds(new HashMap<Integer, List<Integer>>());
-		setTupleTypeToAverageCpuTime(new HashMap<String, Double>());
-		setTupleTypeToExecutedTupleCount(new HashMap<String, Integer>());
-		setTupleIdToCpuStartTime(new HashMap<Integer, Double>());
-		setLoopIdToCurrentAverage(new HashMap<Integer, Double>());
-		setLoopIdToCurrentNum(new HashMap<Integer, Integer>());
+
+	public int getUniqueId(){
+		return count++;
 	}
-	
 	public int getCount() {
 		return count;
 	}
-
 	public void setCount(int count) {
 		this.count = count;
 	}

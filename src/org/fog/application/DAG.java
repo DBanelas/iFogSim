@@ -25,7 +25,7 @@ public class DAG {
     // Function to add an edge into the graph
     public void addEdge(String v, String w) {
         if(adj.containsKey(v) && adj.containsKey(w))
-        adj.get(v).add(w);
+            adj.get(v).add(w);
     }
 
     // A recursive function used by topologicalSort

@@ -508,7 +508,6 @@ public class FogDevice extends PowerDatacenter {
                 while (vm.getCloudletScheduler().isFinishedCloudlets()) {
                     Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
                     if (cl != null) {
-
                         cloudletCompleted = true;
                         Tuple tuple = (Tuple) cl;
                         TimeKeeper.getInstance().tupleEndedExecution(tuple);
@@ -788,10 +787,9 @@ public class FogDevice extends PowerDatacenter {
     }
 
     protected void executeTuple(SimEvent ev, String moduleName) {
-        Logger.debug(getName(), "Executing tuple on module " + moduleName);
         Tuple tuple = (Tuple) ev.getData();
-
         AppModule module = getModuleByName(moduleName);
+        Logger.debug(getName(), "Executing tuple " + tuple.getTupleType() + " on module " + moduleName);
 
         if (tuple.getDirection() == Tuple.UP) {
             String srcModule = tuple.getSrcModuleName();
@@ -811,9 +809,6 @@ public class FogDevice extends PowerDatacenter {
         updateAllocatedMips(moduleName);
         processCloudletSubmit(ev, false);
         updateAllocatedMips(moduleName);
-		/*for(Vm vm : getHost().getVmList()){
-			Logger.error(getName(), "MIPS allocated to "+((AppModule)vm).getName()+" = "+getHost().getTotalAllocatedMipsForVm(vm));
-		}*/
     }
 
     protected void processModuleArrival(SimEvent ev) {

@@ -15,6 +15,7 @@ import org.fog.application.Application;
 import org.fog.entities.Actuator;
 import org.fog.entities.FogDevice;
 import org.fog.entities.Sensor;
+import org.fog.entities.Tuple;
 import org.fog.utils.Config;
 import org.fog.utils.FogEvents;
 import org.fog.utils.FogUtils;
@@ -50,7 +51,7 @@ public class Controller extends SimEntity{
 
 	private FogDevice getFogDeviceById(int id){
 		for(FogDevice fogDevice : getFogDevices()){
-			if(id==fogDevice.getId())
+			if(id == fogDevice.getId())
 				return fogDevice;
 		}
 		return null;
@@ -103,14 +104,28 @@ public class Controller extends SimEntity{
 			printPowerDetails();
 			printCostDetails();
 			printNetworkUsageDetails();
+			printTotalTuplesSentBySensorDevices();
+			printTotalTuplesArrivedAtActuators();
 			System.exit(0);
 			break;
 			
 		}
 	}
-	
+
+	private void printTotalTuplesArrivedAtActuators() {
+		for(Actuator actuator : getActuators()){
+			System.out.println("Total tuples arrived at "+actuator.getName()+" = "+actuator.getTotalTuplesArrived());
+		}
+	}
+
+	private void printTotalTuplesSentBySensorDevices() {
+		for(Sensor sensor : sensors){
+			System.out.println("Total tuples sent by "+sensor.getName()+" = "+sensor.getTotalTuplesSent());
+		}
+	}
+
 	private void printNetworkUsageDetails() {
-		System.out.println("Total network usage = "+NetworkUsageMonitor.getNetworkUsage()/Config.MAX_SIMULATION_TIME);		
+		System.out.println("Total network usage = " + NetworkUsageMonitor.getNetworkUsage() / Config.MAX_SIMULATION_TIME);
 	}
 
 	private FogDevice getCloud(){
@@ -121,7 +136,7 @@ public class Controller extends SimEntity{
 	}
 	
 	private void printCostDetails(){
-		System.out.println("Cost of execution in cloud = "+getCloud().getTotalCost());
+		System.out.println("Cost of execution in cloud = " + getCloud().getTotalCost());
 	}
 	
 	private void printPowerDetails() {
@@ -149,16 +164,6 @@ public class Controller extends SimEntity{
 		System.out.println("APPLICATION LOOP DELAYS");
 		System.out.println("=========================================");
 		for(Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()){
-			/*double average = 0, count = 0;
-			for(int tupleId : TimeKeeper.getInstance().getLoopIdToTupleIds().get(loopId)){
-				Double startTime = 	TimeKeeper.getInstance().getEmitTimes().get(tupleId);
-				Double endTime = 	TimeKeeper.getInstance().getEndTimes().get(tupleId);
-				if(startTime == null || endTime == null)
-					break;
-				average += endTime-startTime;
-				count += 1;
-			}
-			System.out.println(getStringForLoopId(loopId) + " ---> "+(average/count));*/
 			System.out.println(getStringForLoopId(loopId) + " ---> "+TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
 		}
 		System.out.println("=========================================");

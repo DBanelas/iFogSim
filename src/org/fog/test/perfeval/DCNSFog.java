@@ -32,6 +32,7 @@ import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.FogLinearPowerModel;
 import org.fog.utils.FogUtils;
+import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
 
@@ -46,19 +47,20 @@ public class DCNSFog {
 	static List<Actuator> actuators = new ArrayList<Actuator>();
 	static int numOfAreas = 1;
 	static int numOfCamerasPerArea = 4;
+	static int TRANSMISSION_RATE = 10;
 	
-	private static boolean CLOUD = false;
+	private static boolean CLOUD = true;
 	
 	public static void main(String[] args) {
 
 		Log.printLine("Starting DCNS...");
+		Logger.ENABLED = true;
 
 		try {
 			Log.disable();
 			int num_user = 1; // number of cloud users
 			Calendar calendar = Calendar.getInstance();
 			boolean trace_flag = false; // mean trace events
-
 			CloudSim.init(num_user, calendar, trace_flag);
 
 			String appId = "dcns"; // identifier of the application
@@ -138,9 +140,9 @@ public class DCNSFog {
 	}
 	
 	private static FogDevice addCamera(String id, int userId, String appId, int parentId){
-		FogDevice camera = createFogDevice("m-"+id, 500, 1000, 10000, 10000, 3, 0, 87.53, 82.44);
+		FogDevice camera = createFogDevice("m-"+id, 5000, 1000, 10000, 10000, 3, 0, 87.53, 82.44);
 		camera.setParentId(parentId);
-		Sensor sensor = new Sensor("s-"+id, "CAMERA", userId, appId, new DeterministicDistribution(5)); // inter-transmission time of camera (sensor) follows a deterministic distribution
+		Sensor sensor = new Sensor("s-"+id, "CAMERA", userId, appId, new DeterministicDistribution(TRANSMISSION_RATE)); // inter-transmission time of camera (sensor) follows a deterministic distribution
 		sensors.add(sensor);
 		Actuator ptz = new Actuator("ptz-"+id, userId, appId, "PTZ_CONTROL");
 		actuators.add(ptz);
@@ -242,22 +244,25 @@ public class DCNSFog {
 		application.addAppEdge("motion_detector", "object_detector", 2000, 2000, "MOTION_VIDEO_STREAM", Tuple.UP, AppEdge.MODULE); // adding edge from Motion Detector to Object Detector module carrying tuples of type MOTION_VIDEO_STREAM
 		application.addAppEdge("object_detector", "user_interface", 500, 2000, "DETECTED_OBJECT", Tuple.UP, AppEdge.MODULE); // adding edge from Object Detector to User Interface module carrying tuples of type DETECTED_OBJECT
 		application.addAppEdge("object_detector", "object_tracker", 1000, 100, "OBJECT_LOCATION", Tuple.UP, AppEdge.MODULE); // adding edge from Object Detector to Object Tracker module carrying tuples of type OBJECT_LOCATION
-		application.addAppEdge("object_tracker", "PTZ_CONTROL", 100, 28, 100, "PTZ_PARAMS", Tuple.DOWN, AppEdge.ACTUATOR); // adding edge from Object Tracker to PTZ CONTROL (actuator) carrying tuples of type PTZ_PARAMS
-		
+//		application.addAppEdge("object_tracker", "PTZ_CONTROL", 100, 28, 100, "PTZ_PARAMS", Tuple.UP, AppEdge.ACTUATOR); // adding edge from Object Tracker to PTZ CONTROL (actuator) carrying tuples of type PTZ_PARAMS
+		application.addAppEdge("object_tracker", "PTZ_CONTROL", 28, 100, "PTZ_PARAMS", Tuple.UP, AppEdge.ACTUATOR); // adding edge from Object Tracker to PTZ CONTROL (actuator) carrying tuples of type PTZ_PARAMS
 		/*
 		 * Defining the input-output relationships (represented by selectivity) of the application modules. 
 		 */
 		application.addTupleMapping("motion_detector", "CAMERA", "MOTION_VIDEO_STREAM", new FractionalSelectivity(1.0)); // 1.0 tuples of type MOTION_VIDEO_STREAM are emitted by Motion Detector module per incoming tuple of type CAMERA
 		application.addTupleMapping("object_detector", "MOTION_VIDEO_STREAM", "OBJECT_LOCATION", new FractionalSelectivity(1.0)); // 1.0 tuples of type OBJECT_LOCATION are emitted by Object Detector module per incoming tuple of type MOTION_VIDEO_STREAM
-		application.addTupleMapping("object_detector", "MOTION_VIDEO_STREAM", "DETECTED_OBJECT", new FractionalSelectivity(0.05)); // 0.05 tuples of type MOTION_VIDEO_STREAM are emitted by Object Detector module per incoming tuple of type MOTION_VIDEO_STREAM
-	
+		application.addTupleMapping("object_detector", "MOTION_VIDEO_STREAM", "DETECTED_OBJECT", new FractionalSelectivity(1.0)); // 0.05 tuples of type MOTION_VIDEO_STREAM are emitted by Object Detector module per incoming tuple of type MOTION_VIDEO_STREAM
+		application.addTupleMapping("object_tracker", "OBJECT_LOCATION", "PTZ_PARAMS", new FractionalSelectivity(1.0)); // 1.0 tuples of type PTZ_PARAMS are emitted by Object Tracker module per incoming tuple of type OBJECT_LOCATION
+
 		/*
 		 * Defining application loops (maybe incomplete loops) to monitor the latency of. 
 		 * Here, we add two loops for monitoring : Motion Detector -> Object Detector -> Object Tracker and Object Tracker -> PTZ Control
 		 */
 		final AppLoop loop1 = new AppLoop(new ArrayList<String>(){{add("motion_detector");add("object_detector");add("object_tracker");}});
 		final AppLoop loop2 = new AppLoop(new ArrayList<String>(){{add("object_tracker");add("PTZ_CONTROL");}});
-		List<AppLoop> loops = new ArrayList<AppLoop>(){{add(loop1);add(loop2);}};
+//		final AppLoop loop3 = new AppLoop(new ArrayList<String>(){{add("CAMERA");add("motion_detector");add("object_detector");add("object_tracker");add("PTZ_CONTROL");}});
+		final AppLoop loop3 = new AppLoop(new ArrayList<String>(){{add("CAMERA");add("motion_detector");add("object_detector");add("object_tracker");}});
+		List<AppLoop> loops = new ArrayList<AppLoop>(){{add(loop1);add(loop2);add(loop3);}};
 		
 		application.setLoops(loops);
 		return application;

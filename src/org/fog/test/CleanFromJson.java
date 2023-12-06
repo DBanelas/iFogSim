@@ -81,8 +81,9 @@ public class CleanFromJson {
 		application.addTupleMapping("classifier", "_SENSOR", "CLASSIFICATION", new FractionalSelectivity(1.0));
 		application.addTupleMapping("classifier", "_SENSOR", "HISTORY", new FractionalSelectivity(0.1));
 		application.addTupleMapping("tuner", "HISTORY", "TUNING_PARAMS", new FractionalSelectivity(1.0));
-	
-		application.addAppEdge("TEMP", "client", 1000, 100, "TEMP", Tuple.UP, AppEdge.SENSOR);
+
+		// add a periodic edge
+		application.addAppEdge("TEMP", "client", 100.0, 1000, 100, "TEMP", Tuple.UP, AppEdge.SENSOR);
 		application.addAppEdge("client", "classifier", 8000, 100, "_SENSOR", Tuple.UP, AppEdge.MODULE);
 		application.addAppEdge("classifier", "tuner", 1000000, 100, "HISTORY", Tuple.UP, AppEdge.MODULE);
 		application.addAppEdge("classifier", "client", 1000, 100, "CLASSIFICATION", Tuple.DOWN, AppEdge.MODULE);

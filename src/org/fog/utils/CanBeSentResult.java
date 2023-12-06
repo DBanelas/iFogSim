@@ -40,7 +40,4 @@ public class CanBeSentResult {
 	public void setCanBeSent(boolean canBeSent) {
 		this.canBeSent = canBeSent;
 	}
-	
-	
-	
 }
