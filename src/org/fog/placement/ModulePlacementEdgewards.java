@@ -183,6 +183,8 @@ public class ModulePlacementEdgewards extends ModulePlacement{
 			 * Getting the list of modules ready to be placed on current device on path
 			 */
 			List<String> modulesToPlace = getModulesToPlace(placedModules);
+			System.out.println("Placed modules: " + placedModules);
+			System.out.println("Modules to place: " + modulesToPlace);
 			
 			while(modulesToPlace.size() > 0){ // Loop runs until all modules in modulesToPlace are deployed in the path
 				String moduleName = modulesToPlace.get(0);

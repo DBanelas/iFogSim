@@ -3,6 +3,7 @@ package org.fog.test;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -22,9 +23,7 @@ import org.fog.entities.FogDevice;
 import org.fog.entities.FogDeviceCharacteristics;
 import org.fog.entities.Sensor;
 import org.fog.entities.Tuple;
-import org.fog.placement.Controller;
-import org.fog.placement.ModuleMapping;
-import org.fog.placement.ModulePlacementMapping;
+import org.fog.placement.*;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.FogLinearPowerModel;
@@ -40,11 +39,12 @@ public class WorkflowTest {
     static List<Actuator> actuators = new ArrayList<>();
     static HashMap<Integer, ArrayList<FogDevice>> levelToDeviceList = new HashMap<>();
     static HashMap<String, ArrayList<Sensor>> gatewayToSensorList = new HashMap<>();
-    static int TRANSMISSION_RATE = 1000;
-    static int NUM_OF_SENSORS_PER_AREA = 5;
+    static double TRANSMISSION_RATE = 1000;
+    static int NUM_OF_SENSORS_PER_AREA = 2;
     static int NUM_OF_AREAS = 2;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
+    static boolean CLOUD = false;
 
 
     public static void main(String[] args) {
@@ -72,10 +72,20 @@ public class WorkflowTest {
 
             //Create a controller and the module mapping (all cloud in this case)
             Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
-            ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
+            ModuleMapping moduleMapping = customModuleMapping(application);
+            ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
+
+//            if (!CLOUD) {
+//                moduleMapping.addModuleToDevice("sink", "cloud");
+//                moduleMapping.addModuleToDevice("union", "cloud");
+//            }
+
+
+//            ModulePlacement placement = (CLOUD) ? new ModulePlacementOnlyCloud(fogDevices, sensors, actuators, application)
+//                    : new ModulePlacementEdgewards(fogDevices, sensors, actuators, application, moduleMapping);
 
             //Submit application to be executed
-            controller.submitApplication(application, new ModulePlacementMapping(fogDevices, application, moduleMapping));
+            controller.submitApplication(application, placement);
 
             //Start application
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
@@ -100,6 +110,16 @@ public class WorkflowTest {
         );
 
         // Return the populated ModuleMapping instance
+        return moduleMapping;
+    }
+
+    private static ModuleMapping customModuleMapping(Application app) {
+        ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
+        for (String moduleName : app.getModuleNames()) {
+            if (moduleName.equals("source1")) moduleMapping.addModuleToDevice(moduleName, "gateway-0");
+            else if (moduleName.equals("source2")) moduleMapping.addModuleToDevice(moduleName, "gateway-1");
+            else moduleMapping.addModuleToDevice(moduleName, "cloud");
+        }
         return moduleMapping;
     }
 
@@ -156,11 +176,9 @@ public class WorkflowTest {
         } catch (Exception e) {
             e.printStackTrace();
         }
-
         fogdevice.setLevel(level);
         return fogdevice;
     }
-
 
     /**
      * Method to print the topology per level
@@ -232,10 +250,10 @@ public class WorkflowTest {
         for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
             String sensorID = "s-" + groupID + "-" + i;
             Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE_" + groupID, userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-            sensors.add(sensor);
-            gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
             sensor.setGatewayDeviceId(gateway.getId());
             sensor.setLatency(1.0);
+            sensors.add(sensor);
+            gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
         }
 //        Actuator ptz = new Actuator("act-" + groupID, userID, appID, "SINK_ACTUATOR");
 //        actuators.add(ptz);
@@ -278,8 +296,8 @@ public class WorkflowTest {
         application.addTupleMapping("source1", "SENSOR_TUPLE_0", "FILTER_TUPLE_1", new FractionalSelectivity(1.0));
         application.addTupleMapping("source2", "SENSOR_TUPLE_1", "FILTER_TUPLE_2", new FractionalSelectivity(1.0));
 
-        application.addTupleMapping("filter1", "FILTER_TUPLE_1", "JOIN_TUPLE", new FractionalSelectivity(0.5));
-        application.addTupleMapping("filter2", "FILTER_TUPLE_2", "UNION_TUPLE", new FractionalSelectivity(0.7));
+        application.addTupleMapping("filter1", "FILTER_TUPLE_1", "JOIN_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("filter2", "FILTER_TUPLE_2", "UNION_TUPLE", new FractionalSelectivity(1.0));
 
         application.addTupleMapping("join", "JOIN_TUPLE", "UNION_TUPLE", new FractionalSelectivity(1.0));
 

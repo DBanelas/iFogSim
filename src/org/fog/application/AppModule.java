@@ -22,6 +22,7 @@ public class AppModule extends PowerVm{
 	private String name;
 	private String appId;
 	private Map<Pair<String, String>, SelectivityModel> selectivityMap;
+	private int totalTuplesProcessed;
 	
 	/**
 	 * A map from the AppModules sending tuples UP to this module to their instance IDs.
@@ -52,6 +53,7 @@ public class AppModule extends PowerVm{
 			CloudletScheduler cloudletScheduler,
 			Map<Pair<String, String>, SelectivityModel> selectivityMap) {
 		super(id, userId, mips, 1, ram, bw, size, 1, vmm, cloudletScheduler, 300);
+		setTotalTuplesProcessed(0);  //added
 		setName(name);
 		setId(id);
 		setAppId(appId);
@@ -78,6 +80,7 @@ public class AppModule extends PowerVm{
 	public AppModule(AppModule operator) {
 		super(FogUtils.generateEntityId(), operator.getUserId(), operator.getMips(), 1, operator.getRam(), operator.getBw(), operator.getSize(), 1, operator.getVmm(), new TupleScheduler(operator.getMips(), 1), operator.getSchedulingInterval());
 		setName(operator.getName());
+		setTotalTuplesProcessed(0); // added
 		setAppId(operator.getAppId());
 		setInMigration(false);
 		setBeingInstantiated(true);
@@ -88,13 +91,22 @@ public class AppModule extends PowerVm{
 		setSelectivityMap(operator.getSelectivityMap());
 		setDownInstanceIdsMaps(new HashMap<String, List<Integer>>());
 	}
-	
+
+	public void setTotalTuplesProcessed(int totalTuplesProcessed) {
+		this.totalTuplesProcessed = totalTuplesProcessed;
+	}
+	public void incrementTotalTuplesProcessed() {
+		this.totalTuplesProcessed++;
+	}
+	public int getTotalTuplesProcessed() {
+		return totalTuplesProcessed;
+	}
+
 	public void subscribeActuator(int id, String tuplyType){
 		if(!getActuatorSubscriptions().containsKey(tuplyType))
 			getActuatorSubscriptions().put(tuplyType, new ArrayList<Integer>());
 		getActuatorSubscriptions().get(tuplyType).add(id);
 	}
-	
 	public String getName() {
 		return name;
 	}

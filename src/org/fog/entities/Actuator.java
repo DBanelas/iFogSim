@@ -60,7 +60,7 @@ public class Actuator extends SimEntity{
 
 	private void processTupleArrival(SimEvent ev) {
 		Tuple tuple = (Tuple)ev.getData();
-		Logger.debug(getName(), "Received tuple "+tuple.getCloudletId()+"on "+tuple.getDestModuleName());
+		Logger.debug(getName(), "Received tuple "+tuple.getCloudletId()+" on "+tuple.getDestModuleName());
 		totalTuplesArrived++;
 		String srcModule = tuple.getSrcModuleName();
 		String destModule = tuple.getDestModuleName();

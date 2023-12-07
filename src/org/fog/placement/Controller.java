@@ -105,23 +105,62 @@ public class Controller extends SimEntity{
 			printCostDetails();
 			printNetworkUsageDetails();
 			printTotalTuplesSentBySensorDevices();
+			printTuplesSentByEachSensorDevice();
 			printTotalTuplesArrivedAtActuators();
+			printTotalTuplesProcessedPerAppModule();
+			printTotalTuplesArrivedAtFogDevices();
 			System.exit(0);
 			break;
 			
 		}
 	}
 
+	private void printTotalTuplesArrivedAtFogDevices() {
+		System.out.println("TUPLES ARRIVED AT FOG DEVICES");
+		for(FogDevice fogDevice : getFogDevices()){
+			System.out.println("Total tuples arrived at "+fogDevice.getName()+" = "+fogDevice.getTotalTuplesArrived());
+		}
+		System.out.println("---------------------------------------------");
+	}
+
 	private void printTotalTuplesArrivedAtActuators() {
+		System.out.println("TUPLES ARRIVED AT ACTUATORS");
 		for(Actuator actuator : getActuators()){
 			System.out.println("Total tuples arrived at "+actuator.getName()+" = "+actuator.getTotalTuplesArrived());
 		}
+		System.out.println("---------------------------------------------");
+	}
+
+	private void printTotalTuplesProcessedPerAppModule() {
+		System.out.println("TUPLES PROCESSED PER APP MODULE");
+		for(String appId : getApplications().keySet()){
+			Application app = getApplications().get(appId);
+			for(AppModule module : app.getModules()){
+				System.out.println("Total tuples processed by "+module.getName()+" = "+module.getTotalTuplesProcessed());
+			}
+		}
+		System.out.println("---------------------------------------------");
+	}
+
+	private void printTuplesSentByEachSensorDevice() {
+		System.out.println("TUPLES SENT BY EACH SENSOR DEVICE");
+		for(Sensor sensor : sensors){
+			System.out.println("Total tuples sent by "
+					+ sensor.getName()
+					+ " = "
+					+ sensor.getTotalTuplesSent()
+					+ " for tuples of type = "
+					+ sensor.getTupleType());
+		}
+		System.out.println("---------------------------------------------");
+
 	}
 
 	private void printTotalTuplesSentBySensorDevices() {
-		for(Sensor sensor : sensors){
-			System.out.println("Total tuples sent by "+sensor.getName()+" = "+sensor.getTotalTuplesSent());
-		}
+		System.out.println("TOTAL TUPLES SENT BY ALL SENSORS");
+		int sumTuples = sensors.stream().mapToInt(Sensor::getTotalTuplesSent).sum();
+		System.out.println("Total tuples sent by all sensors = "+sumTuples);
+		System.out.println("---------------------------------------------");
 	}
 
 	private void printNetworkUsageDetails() {
