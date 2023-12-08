@@ -39,9 +39,9 @@ public class WorkflowTest {
     static List<Actuator> actuators = new ArrayList<>();
     static HashMap<Integer, ArrayList<FogDevice>> levelToDeviceList = new HashMap<>();
     static HashMap<String, ArrayList<Sensor>> gatewayToSensorList = new HashMap<>();
-    static double TRANSMISSION_RATE = 1000;
-    static int NUM_OF_SENSORS_PER_AREA = 2;
-    static int NUM_OF_AREAS = 2;
+    static double TRANSMISSION_RATE = 1;
+    static int NUM_OF_SENSORS_PER_AREA = 1;
+    static int NUM_OF_AREAS = 1;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
     static boolean CLOUD = false;
@@ -50,7 +50,7 @@ public class WorkflowTest {
     public static void main(String[] args) {
 
         Log.printLine("Starting WorkflowTest...");
-        Logger.ENABLED = true;
+        Logger.ENABLED = false;
 
         try {
             Log.disable();
@@ -72,7 +72,7 @@ public class WorkflowTest {
 
             //Create a controller and the module mapping (all cloud in this case)
             Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
-            ModuleMapping moduleMapping = customModuleMapping(application);
+            ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
             ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
 //            if (!CLOUD) {
@@ -91,7 +91,6 @@ public class WorkflowTest {
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
             CloudSim.startSimulation();
             CloudSim.stopSimulation();
-
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -209,7 +208,7 @@ public class WorkflowTest {
 
     private static void createFogDevices(int userID, String appID) {
         // Create the cloud "device"
-        FogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
+        FogDevice cloud = createFogDevice("cloud", 10000, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
         cloud.setParentId(-1);
         fogDevices.add(cloud);
         levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
@@ -217,7 +216,7 @@ public class WorkflowTest {
         // Create the proxy server
         FogDevice proxy = createFogDevice("proxy-server", 2800, 4000, 10000, 10000, 1, 0.0, 107.339, 83.4333);
         proxy.setParentId(cloud.getId());
-        proxy.setUplinkLatency(100); // latency of connection between proxy server and cloud is 100 ms
+        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
         fogDevices.add(proxy);
         levelToDeviceList.put(1, new ArrayList<FogDevice>(){{add(proxy);}});
 
@@ -245,7 +244,7 @@ public class WorkflowTest {
     }
 
     private static FogDevice addSensorGroup(String groupID, String appID, int userID) {
-        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 10000, 10000, 3, 0.0, 107.339, 83.4333);
+        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 100000, 10000, 3, 0.0, 107.339, 83.4333);
         levelToDeviceList.computeIfAbsent(3, k -> new ArrayList<>()).add(gateway);
         for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
             String sensorID = "s-" + groupID + "-" + i;
@@ -267,48 +266,46 @@ public class WorkflowTest {
          * Adding modules (vertices) to the application model (directed graph)
          */
         application.addAppModule("source1", 10);
-        application.addAppModule("source2", 10);
+//        application.addAppModule("source2", 10);
         application.addAppModule("filter1", 10);
-        application.addAppModule("filter2", 10);
-        application.addAppModule("join", 10);
-        application.addAppModule("union", 10);
-        application.addAppModule("sink", 10);
+//        application.addAppModule("filter2", 10);
+//        application.addAppModule("join", 10);
+//        application.addAppModule("union", 10);
+//        application.addAppModule("sink", 10);
 
         /*
          * Connecting the application modules (vertices) in the application model (directed graph) with edges
          */
         application.addAppEdge("SENSOR_TUPLE_0", "source1", 1000, 20000, "SENSOR_TUPLE_0", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("SENSOR_TUPLE_1", "source2", 1000, 20000, "SENSOR_TUPLE_1", Tuple.UP, AppEdge.SENSOR);
+//        application.addAppEdge("SENSOR_TUPLE_1", "source2", 1000, 20000, "SENSOR_TUPLE_1", Tuple.UP, AppEdge.SENSOR);
 
         application.addAppEdge("source1", "filter1", 1000, 20000, "FILTER_TUPLE_1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("source2", "filter2", 1000, 20000, "FILTER_TUPLE_2", Tuple.UP, AppEdge.MODULE);
-
-        application.addAppEdge("filter1", "join", 1000, 20000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("filter2", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
-
-        application.addAppEdge("join", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("union", "sink", 1000, 20000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+//        application.addAppEdge("source2", "filter2", 1000, 20000, "FILTER_TUPLE_2", Tuple.UP, AppEdge.MODULE);
+//
+//        application.addAppEdge("filter1", "join", 1000, 20000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
+//        application.addAppEdge("filter2", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
+//
+//        application.addAppEdge("join", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
+//        application.addAppEdge("union", "sink", 1000, 20000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
 //        application.addAppEdge("sink", "SINK_ACTUATOR", 10, 10, "SINK_TUPLE", Tuple.DOWN, AppEdge.ACTUATOR);
 
         /*
          * Defining the input-output relationships (represented by selectivity) of the application modules.
          */
         application.addTupleMapping("source1", "SENSOR_TUPLE_0", "FILTER_TUPLE_1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("source2", "SENSOR_TUPLE_1", "FILTER_TUPLE_2", new FractionalSelectivity(1.0));
+//        application.addTupleMapping("source2", "SENSOR_TUPLE_1", "FILTER_TUPLE_2", new FractionalSelectivity(1.0));
 
         application.addTupleMapping("filter1", "FILTER_TUPLE_1", "JOIN_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("filter2", "FILTER_TUPLE_2", "UNION_TUPLE", new FractionalSelectivity(1.0));
-
-        application.addTupleMapping("join", "JOIN_TUPLE", "UNION_TUPLE", new FractionalSelectivity(1.0));
-
-        application.addTupleMapping("union", "UNION_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
+//        application.addTupleMapping("filter2", "FILTER_TUPLE_2", "UNION_TUPLE", new FractionalSelectivity(1.0));
+//        application.addTupleMapping("join", "JOIN_TUPLE", "UNION_TUPLE", new FractionalSelectivity(1.0));
+//        application.addTupleMapping("union", "UNION_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
 //        application.addTupleMapping("sink", "UNION_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
 
         /*
          * Defining application loops (maybe incomplete loops) to monitor the latency of.
          * Here, we add two loops for monitoring : Motion Detector -> Object Detector -> Object Tracker and Object Tracker -> PTZ Control
          */
-        AppLoop pipelineLoop = new AppLoop(new ArrayList<String>(){{add("source1");add("filter1");add("join");add("union");add("sink");}});
+        AppLoop pipelineLoop = new AppLoop(new ArrayList<String>(){{add("s-0-0");add("source1");add("filter1");}});
         List<AppLoop> loops = new ArrayList<>();
         loops.add(pipelineLoop);
         application.setLoops(loops);

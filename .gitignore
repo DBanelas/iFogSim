@@ -4,6 +4,6 @@ bin/
 .settings/
 .output/
 .target/
-.out/
+out/
 .project
 

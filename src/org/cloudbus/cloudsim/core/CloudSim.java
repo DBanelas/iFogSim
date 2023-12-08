@@ -605,6 +605,14 @@ public class CloudSim {
 		future.addEvent(e);
 	}
 
+	public static FutureQueue getFutureQueue() {
+		return future;
+	}
+
+	public static int getDeferredSize() {
+		return deferred.size();
+	}
+
 	/**
 	 * Used to send an event from one entity to another, with priority in the queue.
 	 * 

@@ -47,7 +47,7 @@ public class DCNSFog {
 	static List<Actuator> actuators = new ArrayList<Actuator>();
 	static int numOfAreas = 1;
 	static int numOfCamerasPerArea = 4;
-	static int TRANSMISSION_RATE = 10;
+	static int TRANSMISSION_RATE = 1;
 	
 	private static boolean CLOUD = true;
 	

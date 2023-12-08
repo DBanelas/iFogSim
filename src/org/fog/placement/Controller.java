@@ -1,13 +1,12 @@
 package org.fog.placement;
 
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.core.FutureQueue;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.cloudbus.cloudsim.core.predicates.PredicateType;
 import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.AppModule;
@@ -109,9 +108,34 @@ public class Controller extends SimEntity{
 			printTotalTuplesArrivedAtActuators();
 			printTotalTuplesProcessedPerAppModule();
 			printTotalTuplesArrivedAtFogDevices();
+			printRemaindingEventsInFogDevices();
+			printFutureQueueSize();
+
 			System.exit(0);
 			break;
-			
+		}
+	}
+
+	private void printRemaindingEventsInFogDevices() {
+		System.out.println("REMAINING EVENTS IN FOG DEVICES");
+		for(FogDevice fogDevice : getFogDevices()){
+			System.out.println(fogDevice.getName()+" : "+fogDevice.getNorthTupleQueue().size());
+		}
+		System.out.println("---------------------------------------------");
+		System.out.println();
+	}
+
+	private void printFutureQueueSize() {
+		System.out.println("UNEXECUTED EVENTS :");
+		FutureQueue futureQueue = CloudSim.getFutureQueue();
+		Iterator<SimEvent> it = futureQueue.iterator();
+		PredicateType predicate = new PredicateType(FogEvents.TUPLE_ARRIVAL);
+		while(it.hasNext()){
+			SimEvent event = it.next();
+			if (predicate.match(event)) {
+				Tuple tuple = (Tuple) event.getData();
+				System.out.println(CloudSim.clock()+": "+tuple.getCloudletId());
+			}
 		}
 	}
 
@@ -121,6 +145,7 @@ public class Controller extends SimEntity{
 			System.out.println("Total tuples arrived at "+fogDevice.getName()+" = "+fogDevice.getTotalTuplesArrived());
 		}
 		System.out.println("---------------------------------------------");
+		System.out.println();
 	}
 
 	private void printTotalTuplesArrivedAtActuators() {
@@ -140,11 +165,16 @@ public class Controller extends SimEntity{
 			}
 		}
 		System.out.println("---------------------------------------------");
+		System.out.println();
 	}
 
 	private void printTuplesSentByEachSensorDevice() {
 		System.out.println("TUPLES SENT BY EACH SENSOR DEVICE");
 		for(Sensor sensor : sensors){
+			ArrayList<Integer> sentTupleIds = sensor.getSentTupleIds();
+			Collections.sort(sentTupleIds);
+			System.out.println("First tuple sent by "+sensor.getName()+" = "+sentTupleIds.get(0));
+			System.out.println("Last tuple sent by "+sensor.getName()+" = "+sentTupleIds.get(sentTupleIds.size()-1));
 			System.out.println("Total tuples sent by "
 					+ sensor.getName()
 					+ " = "
@@ -152,8 +182,9 @@ public class Controller extends SimEntity{
 					+ " for tuples of type = "
 					+ sensor.getTupleType());
 		}
-		System.out.println("---------------------------------------------");
 
+		System.out.println("---------------------------------------------");
+		System.out.println();
 	}
 
 	private void printTotalTuplesSentBySensorDevices() {
@@ -161,10 +192,12 @@ public class Controller extends SimEntity{
 		int sumTuples = sensors.stream().mapToInt(Sensor::getTotalTuplesSent).sum();
 		System.out.println("Total tuples sent by all sensors = "+sumTuples);
 		System.out.println("---------------------------------------------");
+		System.out.println();
 	}
 
 	private void printNetworkUsageDetails() {
 		System.out.println("Total network usage = " + NetworkUsageMonitor.getNetworkUsage() / Config.MAX_SIMULATION_TIME);
+		System.out.println();
 	}
 
 	private FogDevice getCloud(){

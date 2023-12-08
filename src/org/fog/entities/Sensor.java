@@ -108,13 +108,13 @@ public class Sensor extends SimEntity{
 		tuple.setDestModuleName(_edge.getDestination());
 		tuple.setSrcModuleName(getSensorName());
 		Logger.debug(getName(), "Sending tuple with tupleId = "+tuple.getCloudletId());
-		this.totalTuplesSent++;
-		this.sentTupleIds.add(tuple.getCloudletId());
 		tuple.setDestinationDeviceId(getGatewayDeviceId());
 
 		int actualTupleId = updateTimings(getSensorName(), tuple.getDestModuleName());
 		tuple.setActualTupleId(actualTupleId);
-		
+		this.totalTuplesSent++;
+		this.sentTupleIds.add(tuple.getActualTupleId());
+
 		send(gatewayDeviceId, getLatency(), FogEvents.TUPLE_ARRIVAL,tuple);
 	}
 	
