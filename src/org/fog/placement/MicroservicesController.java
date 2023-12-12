@@ -299,16 +299,6 @@ public class MicroservicesController extends SimEntity {
         System.out.println("APPLICATION LOOP DELAYS");
         System.out.println("=========================================");
         for (Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()) {
-			/*double average = 0, count = 0;
-			for(int tupleId : TimeKeeper.getInstance().getLoopIdToTupleIds().get(loopId)){
-				Double startTime = 	TimeKeeper.getInstance().getEmitTimes().get(tupleId);
-				Double endTime = 	TimeKeeper.getInstance().getEndTimes().get(tupleId);
-				if(startTime == null || endTime == null)
-					break;
-				average += endTime-startTime;
-				count += 1;
-			}
-			System.out.println(getStringForLoopId(loopId) + " ---> "+(average/count));*/
             System.out.println(getStringForLoopId(loopId) + " ---> " + TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
         }
         System.out.println("=========================================");

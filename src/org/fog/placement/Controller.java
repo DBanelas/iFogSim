@@ -105,12 +105,11 @@ public class Controller extends SimEntity{
 			printNetworkUsageDetails();
 			printTotalTuplesSentBySensorDevices();
 			printTuplesSentByEachSensorDevice();
-			printTotalTuplesArrivedAtActuators();
+//			printTotalTuplesArrivedAtActuators();
 			printTotalTuplesProcessedPerAppModule();
-			printTotalTuplesArrivedAtFogDevices();
+//			printTotalTuplesArrivedAtFogDevices();
 			printRemaindingEventsInFogDevices();
 			printFutureQueueSize();
-
 			System.exit(0);
 			break;
 		}
@@ -139,14 +138,14 @@ public class Controller extends SimEntity{
 		}
 	}
 
-	private void printTotalTuplesArrivedAtFogDevices() {
-		System.out.println("TUPLES ARRIVED AT FOG DEVICES");
-		for(FogDevice fogDevice : getFogDevices()){
-			System.out.println("Total tuples arrived at "+fogDevice.getName()+" = "+fogDevice.getTotalTuplesArrived());
-		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
-	}
+//	private void printTotalTuplesArrivedAtFogDevices() {
+//		System.out.println("TUPLES ARRIVED AT FOG DEVICES");
+//		for(FogDevice fogDevice : getFogDevices()){
+//			System.out.println("Total tuples arrived at "+fogDevice.getName()+" = "+fogDevice.getTotalTuplesArrived());
+//		}
+//		System.out.println("---------------------------------------------");
+//		System.out.println();
+//	}
 
 	private void printTotalTuplesArrivedAtActuators() {
 		System.out.println("TUPLES ARRIVED AT ACTUATORS");
@@ -171,10 +170,6 @@ public class Controller extends SimEntity{
 	private void printTuplesSentByEachSensorDevice() {
 		System.out.println("TUPLES SENT BY EACH SENSOR DEVICE");
 		for(Sensor sensor : sensors){
-			ArrayList<Integer> sentTupleIds = sensor.getSentTupleIds();
-			Collections.sort(sentTupleIds);
-			System.out.println("First tuple sent by "+sensor.getName()+" = "+sentTupleIds.get(0));
-			System.out.println("Last tuple sent by "+sensor.getName()+" = "+sentTupleIds.get(sentTupleIds.size()-1));
 			System.out.println("Total tuples sent by "
 					+ sensor.getName()
 					+ " = "
@@ -182,7 +177,6 @@ public class Controller extends SimEntity{
 					+ " for tuples of type = "
 					+ sensor.getTupleType());
 		}
-
 		System.out.println("---------------------------------------------");
 		System.out.println();
 	}
@@ -227,6 +221,7 @@ public class Controller extends SimEntity{
 		}
 		return null;
 	}
+
 	private void printTimeDetails() {
 		System.out.println("=========================================");
 		System.out.println("============== RESULTS ==================");

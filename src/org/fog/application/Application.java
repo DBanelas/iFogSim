@@ -335,27 +335,21 @@ public class Application {
 	public void setGeoCoverage(GeoCoverage geoCoverage) {
 		this.geoCoverage = geoCoverage;
 	}
-
 	public List<AppLoop> getLoops() {
 		return loops;
 	}
-
 	public void setLoops(List<AppLoop> loops) {
 		this.loops = loops;
 	}
-
 	public int getUserId() {
 		return userId;
 	}
-
 	public void setUserId(int userId) {
 		this.userId = userId;
 	}
-
 	public Map<String, AppEdge> getEdgeMap() {
 		return edgeMap;
 	}
-
 	public void setEdgeMap(Map<String, AppEdge> edgeMap) {
 		this.edgeMap = edgeMap;
 	}

@@ -123,8 +123,7 @@ public class TimeKeeper {
 		return tupleTypeToExecutedTupleCount;
 	}
 
-	public void setTupleTypeToExecutedTupleCount(
-			Map<String, Integer> tupleTypeToExecutedTupleCount) {
+	public void setTupleTypeToExecutedTupleCount(Map<String, Integer> tupleTypeToExecutedTupleCount) {
 		this.tupleTypeToExecutedTupleCount = tupleTypeToExecutedTupleCount;
 	}
 

@@ -1,9 +1,5 @@
 package org.fog.test;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.Pe;
@@ -17,13 +13,11 @@ import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
 import org.fog.application.Application;
 import org.fog.application.selectivity.FractionalSelectivity;
-import org.fog.entities.Actuator;
-import org.fog.entities.FogBroker;
-import org.fog.entities.FogDevice;
-import org.fog.entities.FogDeviceCharacteristics;
-import org.fog.entities.Sensor;
-import org.fog.entities.Tuple;
-import org.fog.placement.*;
+import org.fog.entities.*;
+import org.fog.placement.Controller;
+import org.fog.placement.ModuleMapping;
+import org.fog.placement.ModulePlacement;
+import org.fog.placement.ModulePlacementMapping;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.FogLinearPowerModel;
@@ -32,16 +26,19 @@ import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
 
-public class WorkflowTestComplex {
+import java.util.*;
+import java.util.stream.Collectors;
+
+public class WorkflowTestSimple {
 
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
     static HashMap<Integer, ArrayList<FogDevice>> levelToDeviceList = new HashMap<>();
     static HashMap<String, ArrayList<Sensor>> gatewayToSensorList = new HashMap<>();
-    static double TRANSMISSION_RATE = 20;
-    static int NUM_OF_SENSORS_PER_AREA = 3;
-    static int NUM_OF_AREAS = 3;
+    static double TRANSMISSION_RATE = 1;
+    static int NUM_OF_SENSORS_PER_AREA = 10;
+    static int NUM_OF_AREAS = 1;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
@@ -57,7 +54,7 @@ public class WorkflowTestComplex {
             CloudSim.init(NUM_USERS, calendar, TRACE_FLAG);
 
             // Set an identifier for the application and create a broker
-            String appId = "workflowTestComplex";
+            String appId = "workflowTest";
             FogBroker broker = new FogBroker("broker");
             int userID = broker.getId();
 
@@ -209,7 +206,6 @@ public class WorkflowTestComplex {
         router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
         fogDevices.add(router);
         levelToDeviceList.computeIfAbsent(2, k -> new ArrayList<>()).add(router);
-
         // adding a fog device for every Gateway in physical topology
         // Each gateway has one or more sensors attached to it
         // The parent of each gateway is the proxy server
@@ -232,48 +228,23 @@ public class WorkflowTestComplex {
             sensors.add(sensor);
             gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
         }
+
         return gateway;
     }
 
     private static Application createApplication(String appId, int userId){
         Application application = Application.createApplication(appId, userId);
-
-        // Adding modules (vertices) to the application model (directed graph)
+        // Adding modules to the appliction graph
         application.addAppModule("source1", 10);
-        application.addAppModule("source2", 10);
-        application.addAppModule("source3", 10);
         application.addAppModule("filter1", 10);
-        application.addAppModule("filter2", 10);
-        application.addAppModule("filter3", 10);
-        application.addAppModule("join", 100);
-        application.addAppModule("union", 10);
-        application.addAppModule("sink", 10);
 
         // Connecting the application modules (vertices) in the application model (directed graph) with edges
         application.addAppEdge("SENSOR_TUPLE_1", "source1", 1000, 20000, "SENSOR_TUPLE_1", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("SENSOR_TUPLE_2", "source2", 1000, 20000, "SENSOR_TUPLE_2", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("SENSOR_TUPLE_3", "source3", 1000, 20000, "SENSOR_TUPLE_3", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("source1", "filter1", 1000, 20000, "FILTER_TUPLE_1", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("source2", "filter2", 1000, 20000, "FILTER_TUPLE_2", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("source3", "filter3", 1000, 20000, "FILTER_TUPLE_3", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("filter1", "join", 2500, 20000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("filter2", "join", 2500, 20000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("join", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("filter3", "union", 1000, 20000, "UNION_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("union", "sink", 1000, 20000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
 
         // Defining the input-output relationships (represented by selectivity) of the application modules.
         application.addTupleMapping("source1", "SENSOR_TUPLE_1", "FILTER_TUPLE_1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("source2", "SENSOR_TUPLE_2", "FILTER_TUPLE_2", new FractionalSelectivity(1.0));
-        application.addTupleMapping("source3", "SENSOR_TUPLE_3", "FILTER_TUPLE_3", new FractionalSelectivity(1.0));
-
         application.addTupleMapping("filter1", "FILTER_TUPLE_1", "JOIN_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("filter2", "FILTER_TUPLE_2", "JOIN_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("filter3", "FILTER_TUPLE_3", "UNION_TUPLE", new FractionalSelectivity(1.0));
-
-        application.addTupleMapping("join", "JOIN_TUPLE", "UNION_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("union", "UNION_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
-
 
         List<AppLoop> loops = getAppLoops();
         application.setLoops(loops);
@@ -281,13 +252,9 @@ public class WorkflowTestComplex {
     }
 
     private static List<AppLoop> getAppLoops() {
-        AppLoop loop1 = new AppLoop(new ArrayList<String>(){{add("s-0-1");add("source1");add("filter1");add("join");add("union");add("sink");}});
+        AppLoop loop1 = new AppLoop(new ArrayList<String>(){{add("s-0-1");add("source1");add("filter1");}});
         List<AppLoop> loops = new ArrayList<>();
         loops.add(loop1);
         return loops;
     }
 }
-
-
-
-

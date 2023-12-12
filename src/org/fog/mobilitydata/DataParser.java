@@ -59,10 +59,7 @@ public class DataParser {
     }
 
     public void parseUserData(Map<Integer, Integer> userMobilityPattern, String datasetReference) throws IOException {
-        // TODO Auto-generated method stub
-
         for (int userID : userMobilityPattern.keySet()) {
-
             Map<Double, Location> tempUserLocationInfo = new HashMap<Double, Location>();
             BufferedReader csvReader = new BufferedReader(new FileReader(datasetReference + userID + ".csv"));
             System.out.println("The Mobility dataset used in this simulation for user: " + userID + " is: " + datasetReference + userID + ".csv");
@@ -94,13 +91,10 @@ public class DataParser {
 
     @SuppressWarnings("unchecked")
     public void parseResourceData() throws NumberFormatException, IOException {
-
-
         int numOfLevels = levelID.get("LevelsNum");
         ArrayList<String>[] resouresOnLevels = new ArrayList[numOfLevels];
         for (int i = 0; i < numOfLevels; i++)
             resouresOnLevels[i] = new ArrayList<String>();
-
 
         BufferedReader csvReader = new BufferedReader(new FileReader(".\\dataset\\edgeResources-melbCBD.csv"));
         String row;
