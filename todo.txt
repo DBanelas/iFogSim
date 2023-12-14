@@ -1,0 +1,2 @@
+1) Migrate project to maven
+2) Rewrite the JsonToTopology class to use the Jackson lib

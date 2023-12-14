@@ -3,7 +3,7 @@ bin/
 .classpath
 .settings/
 .output/
-.target/
+target/
 out/
 .project
 

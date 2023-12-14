@@ -1,4 +1,15 @@
  -- Units (?)
+ CPU -> MIPS
+ RAM -> MB
+ Uplink BW -> MB
+ Downlink BW -> MB
+ Busy power -> Watt
+ Idle power -> Watt
+ tupleNwSize -> Bytes
+ tupleCpuSize -> MIPS
+
+ time -> Wall time
+
  -- Bandwidth issue
  -- Simulation time
  
