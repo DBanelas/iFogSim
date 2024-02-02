@@ -3,11 +3,9 @@ package org.fog.test;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.databind.Module;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import org.cloudbus.cloudsim.Host;
-import org.cloudbus.cloudsim.Log;
-import org.cloudbus.cloudsim.Pe;
-import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.provisioners.RamProvisionerSimple;
@@ -33,71 +31,90 @@ import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
 
 public class WorkflowTestComplex {
-
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
     static HashMap<Integer, ArrayList<FogDevice>> levelToDeviceList = new HashMap<>();
     static HashMap<String, ArrayList<Sensor>> gatewayToSensorList = new HashMap<>();
-    static double TRANSMISSION_RATE = 60;
-    static int NUM_OF_SENSORS_PER_AREA = 20;
-    static int NUM_OF_AREAS = 3;
-    static int NUM_USERS = 1;
+    static double TRANSMISSION_RATE = 30;
+    static int NUM_SENSORS_PER_AREA = 50;
+    static int NUM_AREAS = 3;
+    static int USER_ID = 1;
     static boolean TRACE_FLAG = false;
+    static String APP_ID = "workflowTestComplex";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
+        initializeSimulation(true, false);
+        executeSimulation();
+    }
 
-        Log.printLine("Starting WorkflowTest...");
-        Logger.ENABLED = true;
+    private static void executeSimulation() {
+        //Create the application
+        Application application = createApplication(APP_ID, USER_ID);
 
-        try {
-            Log.disable();
-            // Init the CloudSim engine
-            Calendar calendar = Calendar.getInstance();
-            CloudSim.init(NUM_USERS, calendar, TRACE_FLAG);
+        // Create the physical topology
+        createFogDevices(USER_ID, APP_ID);
 
-            // Set an identifier for the application and create a broker
-            String appId = "workflowTestComplex";
-            FogBroker broker = new FogBroker("broker");
-            int userID = broker.getId();
+        //Create a controller and the module mapping (all cloud in this case)
+        Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
+        ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
+        ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
-            //Create the application
-            Application application = createApplication(appId, userID);
-            application.setUserId(userID);
+        //Submit application to be executed
+        controller.submitApplication(application, placement);
+        printTopology();
+        printPlacement(moduleMapping);
 
-            // Create the physical topology
-            createFogDevices(userID, appId);
+        //Start application
+        TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
+        CloudSim.startSimulation();
+        CloudSim.stopSimulation();
+    }
 
-            //Create a controller and the module mapping (all cloud in this case)
-            Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
-            ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
-            ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
+    private static void initializeSimulation(boolean enableiFogSimLogger,
+                                       boolean enableCloudSimLogger) {
+        Logger.ENABLED = enableiFogSimLogger;
+        Log.setDisabled(!enableCloudSimLogger);
 
-            //Submit application to be executed
-            controller.submitApplication(application, placement);
-            printTopology();
+        // Init the CloudSim engine
+        Calendar calendar = Calendar.getInstance();
+        CloudSim.init(USER_ID, calendar, TRACE_FLAG);
+    }
 
-            //Start application
-            TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
-            CloudSim.startSimulation();
-            CloudSim.stopSimulation();
-
-        } catch (Exception e) {
-            e.printStackTrace();
+    private static void printPlacement(ModuleMapping moduleMapping) {
+        for (String deviceName : moduleMapping.getModuleMapping().keySet()) {
+            System.out.println(deviceName + "contains modules: " + moduleMapping.getModuleMapping().get(deviceName));
         }
-
     }
 
     private static ModuleMapping createAllCloudModuleMapping(Application app) {
-        // Create a new ModuleMapping instance
         ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
+        app.getModules().forEach(module -> {
+            moduleMapping.addModuleToDevice(module.getName(), "cloud");
+        });
 
-        // Iterate over all module names in the application
-        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
-
-        // Return the populated ModuleMapping instance
         return moduleMapping;
     }
+
+//    private static ModuleMapping createAllCloudModuleMapping(Application app) {
+//        // Create a new ModuleMapping instance
+//        ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
+//        moduleMapping.addModuleToDevice("source1", "gateway-0");
+//        moduleMapping.addModuleToDevice("filter1", "gateway-0");
+//
+//        moduleMapping.addModuleToDevice("source2", "gateway-1");
+//        moduleMapping.addModuleToDevice("filter2", "gateway-1");
+//
+//        moduleMapping.addModuleToDevice("source3", "gateway-2");
+//        moduleMapping.addModuleToDevice("filter3", "gateway-2");
+//
+//        moduleMapping.addModuleToDevice("join", "proxy-server");
+//        moduleMapping.addModuleToDevice("union", "proxy-server");
+//        moduleMapping.addModuleToDevice("sink", "proxy-server");
+//
+//        // Return the populated ModuleMapping instance
+//        return moduleMapping;
+//    }
 
     private static FogDevice createFogDevice(String nodeName,
                                              long mips,
@@ -109,7 +126,7 @@ public class WorkflowTestComplex {
                                              double busyPower,
                                              double idlePower) {
 
-        List<Pe> peList = new ArrayList<Pe>();
+        List<Pe> peList = new ArrayList<>();
 
         // 3. Create PEs and add these into a list.
         peList.add(new Pe(0, new PeProvisionerOverbooking(mips))); // need to store Pe id and MIPS Rating
@@ -139,7 +156,7 @@ public class WorkflowTestComplex {
         double costPerMem = 0.05; // the cost of using memory in this resource
         double costPerStorage = 0.001; // the cost of using storage in this resource
         double costPerBw = 0.0; // the cost of using bw in this resource
-        LinkedList<Storage> storageList = new LinkedList<Storage>(); // we are not adding SAN devices by now
+        LinkedList<Storage> storageList = new LinkedList<>(); // we are not adding SAN devices by now
 
         FogDeviceCharacteristics characteristics = new FogDeviceCharacteristics(
                 arch, os, vmm, host, time_zone, cost, costPerMem,
@@ -183,28 +200,36 @@ public class WorkflowTestComplex {
 
     }
 
+    /**
+     * Method to create the physical topology
+     * Creates the cloud at level 0
+     * Creates the proxy server at level 1
+     * Creates the routers at level 2
+     * Creates the gateways at level 3
+     * Creates the sensors at level 4
+     */
     private static void createFogDevices(int userID, String appID) {
-        // Create the cloud "device"
-        FogDevice cloud = createFogDevice("cloud", 44800, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
+        // Create the cloud at level 0
+        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
         cloud.setParentId(-1);
         fogDevices.add(cloud);
         levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
 
-        // Create the proxy server
-        FogDevice proxy = createFogDevice("proxy-server", 2800, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
+        // Create the proxy server at level 1
+        FogDevice proxy = createFogDevice("proxy-server", 100000, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
         proxy.setParentId(cloud.getId());
-        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
+        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 20 ms
         fogDevices.add(proxy);
         levelToDeviceList.put(1, new ArrayList<FogDevice>(){{add(proxy);}});
 
         // for each area, create a router, a gateway and NUM_OF_SENSORS_PER_AREA sensors
-        for(int i = 0; i < NUM_OF_AREAS; i++) {
+        for(int i = 0; i < NUM_AREAS; i++) {
             addArea(i, userID, appID, proxy.getId());
         }
     }
 
     private static void addArea(int id, int userID, String appID, int parentId){
-        FogDevice router = createFogDevice("router-"+id, 2800, 4000, 10000, 10000, 2, 0.0, 107.339, 83.4333);
+        FogDevice router = createFogDevice("router-"+id, 100000, 4000, 10000, 10000, 2, 0.0, 107.339, 83.4333);
         router.setParentId(parentId);
         router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
         fogDevices.add(router);
@@ -221,9 +246,18 @@ public class WorkflowTestComplex {
     }
 
     private static FogDevice addSensorGroup(int groupID, String appID, int userID) {
-        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 10000, 10000, 3, 0.0, 107.339, 83.4333);
+        FogDevice gateway = createFogDevice("gateway-" + groupID,
+                100000,
+                4000,
+                1000,
+                10000,
+                3,
+                0.0,
+                107.339,
+                83.4333);
+
         levelToDeviceList.computeIfAbsent(3, k -> new ArrayList<>()).add(gateway);
-        for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
+        for (int i = 0; i < NUM_SENSORS_PER_AREA; i++) {
             String sensorID = "s-" + groupID + "-" + i;
             int tupleGroupID = groupID + 1;
             Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE_" + tupleGroupID, userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
@@ -237,6 +271,7 @@ public class WorkflowTestComplex {
 
     private static Application createApplication(String appId, int userId){
         Application application = Application.createApplication(appId, userId);
+        application.setUserId(userId);
 
         // Adding modules (vertices) to the application model (directed graph)
         application.addAppModule("source1", 10);
@@ -287,7 +322,3 @@ public class WorkflowTestComplex {
         return loops;
     }
 }
-
-
-
-

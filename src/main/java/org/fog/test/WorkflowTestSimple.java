@@ -25,6 +25,7 @@ import org.fog.utils.FogUtils;
 import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
+import sun.util.resources.cldr.nl.CalendarData_nl_NL;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -34,11 +35,8 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static HashMap<Integer, ArrayList<FogDevice>> levelToDeviceList = new HashMap<>();
-    static HashMap<String, ArrayList<Sensor>> gatewayToSensorList = new HashMap<>();
     static double TRANSMISSION_RATE = 1;
-    static int NUM_OF_SENSORS_PER_AREA = 10;
-    static int NUM_OF_AREAS = 1;
+    static int NUM_SENSORS = 100;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
@@ -63,16 +61,20 @@ public class WorkflowTestSimple {
             application.setUserId(userID);
 
             // Create the physical topology
-            createFogDevices(userID, appId);
+            createTestTopology(userID, appId);
+
+            printDeviceIds(fogDevices);
+            System.out.println("------------");
+            printChildren(fogDevices);
+
 
             //Create a controller and the module mapping (all cloud in this case)
             Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
-            ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
+            ModuleMapping moduleMapping = createCustomMapping(application);
             ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
             //Submit application to be executed
             controller.submitApplication(application, placement);
-            printTopology();
 
             //Start application
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
@@ -85,16 +87,45 @@ public class WorkflowTestSimple {
 
     }
 
-    private static ModuleMapping createAllCloudModuleMapping(Application app) {
-        // Create a new ModuleMapping instance
+    private static void printDeviceIds(List<FogDevice> fogDevices) {
+        fogDevices.forEach(fogDevice -> System.out.println(fogDevice.getName() + " " + fogDevice.getId()));
+    }
+
+    private static void printChildren(List<FogDevice> fogDevices) {
+        fogDevices.forEach(fogDevice -> {
+            System.out.println("Children of " + fogDevice.getName() + ":");
+            for (Integer child : fogDevice.getChildrenIds()) {
+                System.out.print(child + " ");
+            }
+        });
+    }
+
+    private static ModuleMapping createCustomMapping(Application application) {
         ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
-
-        // Iterate over all module names in the application
-        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
-
-        // Return the populated ModuleMapping instance
+        moduleMapping.addModuleToDevice("source", "SourceDevice");
+        moduleMapping.addModuleToDevice("sensML", "SensMLDevice");
+        moduleMapping.addModuleToDevice("rangeFilter", "RangeFilterDevice");
+        moduleMapping.addModuleToDevice("bloomFilter", "BloomFilterDevice");
+        moduleMapping.addModuleToDevice("interpolation", "InterpolationDevice");
+        moduleMapping.addModuleToDevice("join", "JoinDevice");
+        moduleMapping.addModuleToDevice("annotate", "AnnotateDevice");
+        moduleMapping.addModuleToDevice("azure", "AzureDevice");
+        moduleMapping.addModuleToDevice("csvToSenML", "CSVToSenML");
+        moduleMapping.addModuleToDevice("mqtt", "MQTTDevice");
+        moduleMapping.addModuleToDevice("sink", "SinkDevice");
         return moduleMapping;
     }
+
+//    private static ModuleMapping createAllCloudModuleMapping(Application app) {
+//        // Create a new ModuleMapping instance
+//        ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
+//
+//        // Iterate over all module names in the application
+//        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
+//
+//        // Return the populated ModuleMapping instance
+//        return moduleMapping;
+//    }
 
     private static FogDevice createFogDevice(String nodeName,
                                              long mips,
@@ -156,95 +187,231 @@ public class WorkflowTestSimple {
     /**
      * Method to print the topology per level
      */
-    private static void printTopology() {
-        System.out.println("------------ LEVEL 0: -------------");
-        for (FogDevice fogDevice : levelToDeviceList.get(0)) {
-            System.out.println(fogDevice.getName());
-        }
-        System.out.println("------------ LEVEL 1: -------------");
-        for (FogDevice fogDevice : levelToDeviceList.get(1)) {
-            System.out.println(fogDevice.getName());
-        }
-        System.out.println("------------ LEVEL 2: -------------");
-        for (FogDevice fogDevice : levelToDeviceList.get(2)) {
-            System.out.println(fogDevice.getName());
-        }
-        System.out.println("------------ LEVEL 3: -------------");
-        for (FogDevice fogDevice : levelToDeviceList.get(3)) {
-            List<String> sensorNames = gatewayToSensorList.get(fogDevice.getName())
-                    .stream()
-                    .map(Sensor::getName)
-                    .collect(Collectors.toList());
-            System.out.println(fogDevice.getName() + " with connected sensors: " + sensorNames);
-        }
+//    private static void printTopology() {
+//        System.out.println("------------ LEVEL 0: -------------");
+//        for (FogDevice fogDevice : levelToDeviceList.get(0)) {
+//            System.out.println(fogDevice.getName());
+//        }
+//        System.out.println("------------ LEVEL 1: -------------");
+//        for (FogDevice fogDevice : levelToDeviceList.get(1)) {
+//            System.out.println(fogDevice.getName());
+//        }
+//        System.out.println("------------ LEVEL 2: -------------");
+//        for (FogDevice fogDevice : levelToDeviceList.get(2)) {
+//            System.out.println(fogDevice.getName());
+//        }
+//        System.out.println("------------ LEVEL 3: -------------");
+//        for (FogDevice fogDevice : levelToDeviceList.get(3)) {
+//            List<String> sensorNames = gatewayToSensorList.get(fogDevice.getName())
+//                    .stream()
+//                    .map(Sensor::getName)
+//                    .collect(Collectors.toList());
+//            System.out.println(fogDevice.getName() + " with connected sensors: " + sensorNames);
+//        }
+//
+//    }
 
-    }
+    private static void createTestTopology(int userID, String appID) {
 
-    private static void createFogDevices(int userID, String appID) {
-        // Create the cloud "device"
-        FogDevice cloud = createFogDevice("cloud", 10000, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
-        cloud.setParentId(-1);
+        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 100000, 100000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
-        levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
+        cloud.setParentId(-1);
 
-        // Create the proxy server
-        FogDevice proxy = createFogDevice("proxy-server", 2800, 4000, 10000, 10000, 1, 0.0, 107.339, 83.4333);
-        proxy.setParentId(cloud.getId());
-        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
-        fogDevices.add(proxy);
-        levelToDeviceList.put(1, new ArrayList<FogDevice>(){{add(proxy);}});
 
-        // for each area, create a router, a gateway and NUM_OF_SENSORS_PER_AREA sensors
-        for(int i = 0; i < NUM_OF_AREAS; i++) {
-            addArea(i, userID, appID, proxy.getId());
-        }
-    }
+        FogDevice sinkDevice = createFogDevice("SinkDevice", 60000, 4000, 100000, 100000, 2, 0.0, 107.339, 83.4333);
+        sinkDevice.setUplinkLatency(2);
+        fogDevices.add(sinkDevice);
 
-    private static void addArea(int id, int userID, String appID, int parentId){
-        FogDevice router = createFogDevice("router-"+id, 2800, 4000, 10000, 10000, 2, 0.0, 107.339, 83.4333);
-        router.setParentId(parentId);
-        router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
-        fogDevices.add(router);
-        levelToDeviceList.computeIfAbsent(2, k -> new ArrayList<>()).add(router);
-        // adding a fog device for every Gateway in physical topology
-        // Each gateway has one or more sensors attached to it
-        // The parent of each gateway is the proxy server
-        FogDevice gateway = addSensorGroup(id, appID, userID);
-        gateway.setParentId(router.getId());
-        gateway.setUplinkLatency(2); // latency of connection between the gateway and proxy server is 2 ms
-        fogDevices.add(gateway);
+        FogDevice mqttDevice = createFogDevice("MQTTDevice", 60000, 4000, 100000, 100000, 2, 0.0, 107.339, 83.4333);
+        mqttDevice.setUplinkLatency(2);
+        fogDevices.add(mqttDevice);
 
-    }
+        FogDevice annotateDevice = createFogDevice("AnnotateDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        annotateDevice.setUplinkLatency(2);
+        fogDevices.add(annotateDevice);
 
-    private static FogDevice addSensorGroup(int groupID, String appID, int userID) {
-        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 100000, 10000, 3, 0.0, 107.339, 83.4333);
-        levelToDeviceList.computeIfAbsent(3, k -> new ArrayList<>()).add(gateway);
-        for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
-            String sensorID = "s-" + groupID + "-" + i;
-            int tupleGroupID = groupID + 1;
-            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE_" + tupleGroupID, userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-            sensor.setGatewayDeviceId(gateway.getId());
+        FogDevice azureDevice = createFogDevice("AzureDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        azureDevice.setUplinkLatency(2);
+        fogDevices.add(azureDevice);
+
+        FogDevice csvToSenML = createFogDevice("CSVToSenML", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        csvToSenML.setUplinkLatency(2);
+        fogDevices.add(csvToSenML);
+
+        FogDevice joinDevice = createFogDevice("JoinDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        joinDevice.setUplinkLatency(2);
+        fogDevices.add(joinDevice);
+
+        FogDevice interpolationDevice = createFogDevice("InterpolationDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        interpolationDevice.setUplinkLatency(2);
+        fogDevices.add(interpolationDevice);
+        interpolationDevice.setParentId(joinDevice.getId());
+
+        FogDevice bloomFilterDevice = createFogDevice("BloomFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        bloomFilterDevice.setUplinkLatency(2);
+        fogDevices.add(bloomFilterDevice);
+
+        FogDevice rangeFilterDevice = createFogDevice("RangeFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        rangeFilterDevice.setUplinkLatency(2);
+        fogDevices.add(rangeFilterDevice);
+
+        // Create a gateway device
+        FogDevice sensMLDevice = createFogDevice("SensMLDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        sensMLDevice.setUplinkLatency(2);
+        fogDevices.add(sensMLDevice);
+
+        FogDevice sourceDevice = createFogDevice("SourceDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        sourceDevice.setUplinkLatency(2);
+        fogDevices.add(sourceDevice);
+
+        sourceDevice.setParentId(sensMLDevice.getId());
+        sensMLDevice.setParentId(rangeFilterDevice.getId());
+        rangeFilterDevice.setParentId(bloomFilterDevice.getId());
+        bloomFilterDevice.setParentId(interpolationDevice.getId());
+        interpolationDevice.setParentId(joinDevice.getId());
+        joinDevice.setParentId(annotateDevice.getId());
+        azureDevice.setParentId(annotateDevice.getId());
+        annotateDevice.setParentId(csvToSenML.getId());
+        csvToSenML.setParentId(mqttDevice.getId());
+        mqttDevice.setParentId(sinkDevice.getId());
+        sinkDevice.setParentId(azureDevice.getId());
+
+
+        // Create sensors  to gateway device
+        for (int i = 0; i < NUM_SENSORS; i++) {
+            String sensorID = "sensor-" + i;
+            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE", userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
+            sensor.setGatewayDeviceId(sourceDevice.getId());
             sensor.setLatency(1.0);
             sensors.add(sensor);
-            gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
         }
-
-        return gateway;
     }
+
+
+//    private static void createTestTopology(int userID, String appID) {
+//        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
+//        fogDevices.add(cloud);
+//        levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
+//
+//        FogDevice proxy = createFogDevice("proxy", 28000, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
+//        fogDevices.add(proxy);
+//
+//        FogDevice router = createFogDevice("router", 28000, 4000, 100000, 10000, 2, 0.0, 107.339, 83.4333);
+//        fogDevices.add(router);
+//
+//        // Create a cycle with the above devices proxy -> cloud, cloud -> router, router -> proxy
+//        proxy.setParentId(cloud.getId());
+//        cloud.setParentId(router.getId());
+//        router.setParentId(proxy.getId());
+//
+//        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
+//        cloud.setUplinkLatency(2); // latency of connection between cloud and router is 2 ms
+//        router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
+//
+//        // Create sensors  to router device
+//        for (int i = 0; i < NUM_SENSORS; i++) {
+//            String sensorID = "sensor-" + i;
+//            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE", userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
+//            sensor.setGatewayDeviceId(router.getId());
+//            sensor.setLatency(1.0);
+//            sensors.add(sensor);
+//        }
+//    }
+
+//    private static void createFogDevices(int userID, String appID) {
+//        // Create the cloud "device"
+//        FogDevice cloud = createFogDevice("cloud", 10000, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
+//        cloud.setParentId(-1);
+//        fogDevices.add(cloud);
+//        levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
+//
+//        // Create the proxy server
+//        FogDevice proxy = createFogDevice("proxy-server", 2800, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
+//        proxy.setParentId(cloud.getId());
+//        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
+//        fogDevices.add(proxy);
+//        levelToDeviceList.put(1, new ArrayList<FogDevice>(){{add(proxy);}});
+//
+//        // for each area, create a router, a gateway and NUM_OF_SENSORS_PER_AREA sensors
+//        for(int i = 0; i < NUM_OF_AREAS; i++) {
+//            addArea(i, userID, appID, proxy.getId());
+//        }
+//    }
+
+//    private static void addArea(int id, int userID, String appID, int parentId){
+//        FogDevice router = createFogDevice("router-"+id, 2800, 4000, 100000, 10000, 2, 0.0, 107.339, 83.4333);
+//        router.setParentId(parentId);
+//        router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
+//        fogDevices.add(router);
+//        levelToDeviceList.computeIfAbsent(2, k -> new ArrayList<>()).add(router);
+//        // adding a fog device for every Gateway in physical topology
+//        // Each gateway has one or more sensors attached to it
+//        // The parent of each gateway is the proxy server
+//        FogDevice gateway = addSensorGroup(id, appID, userID);
+//        gateway.setParentId(router.getId());
+//        gateway.setUplinkLatency(2); // latency of connection between the gateway and proxy server is 2 ms
+//        fogDevices.add(gateway);
+//
+//    }
+
+//    private static FogDevice addSensorGroup(int groupID, String appID, int userID) {
+//        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 100000, 10000, 3, 0.0, 107.339, 83.4333);
+//        levelToDeviceList.computeIfAbsent(3, k -> new ArrayList<>()).add(gateway);
+//        for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
+//            String sensorID = "s-" + groupID + "-" + i;
+//            int tupleGroupID = groupID + 1;
+//            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE_" + tupleGroupID, userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
+//            sensor.setGatewayDeviceId(gateway.getId());
+//            sensor.setLatency(1.0);
+//            sensors.add(sensor);
+//            gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
+//        }
+//
+//        return gateway;
+//    }
 
     private static Application createApplication(String appId, int userId){
         Application application = Application.createApplication(appId, userId);
         // Adding modules to the appliction graph
-        application.addAppModule("source1", 10);
-        application.addAppModule("filter1", 10);
+        application.addAppModule("source", 10);
+        application.addAppModule("sensML", 10);
+        application.addAppModule("rangeFilter", 10);
+        application.addAppModule("bloomFilter", 10);
+        application.addAppModule("interpolation", 10);
+        application.addAppModule("join", 10);
+        application.addAppModule("annotate", 10);
+        application.addAppModule("azure", 10);
+        application.addAppModule("csvToSenML", 10);
+        application.addAppModule("mqtt", 10);
+        application.addAppModule("sink", 10);
+
 
         // Connecting the application modules (vertices) in the application model (directed graph) with edges
-        application.addAppEdge("SENSOR_TUPLE_1", "source1", 1000, 20000, "SENSOR_TUPLE_1", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("source1", "filter1", 1000, 20000, "FILTER_TUPLE_1", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("SENSOR_TUPLE", "source", 1000, 2000, "SENSOR_TUPLE", Tuple.UP, AppEdge.SENSOR);
+        application.addAppEdge("source", "sensML", 1000, 2000, "SENSML_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("sensML", "rangeFilter", 1000, 2000, "RANGE_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("bloomFilter", "interpolation", 1000, 2000, "INTERPOLATION_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("interpolation", "join", 1000, 2000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("join", "annotate", 1000, 2000, "ANNOTATE_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("annotate", "azure", 1000, 2000, "AZURE_TUPLE", Tuple.DOWN, AppEdge.MODULE); // correct
+        application.addAppEdge("annotate", "csvToSenML", 1000, 2000, "CSV_TO_SENSML_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("csvToSenML", "mqtt", 1000, 2000, "MQTT_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mqtt", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("azure", "sink", 1000, 2000, "SINK_TUPLE", Tuple.DOWN, AppEdge.MODULE);
 
         // Defining the input-output relationships (represented by selectivity) of the application modules.
-        application.addTupleMapping("source1", "SENSOR_TUPLE_1", "FILTER_TUPLE_1", new FractionalSelectivity(1.0));
-        application.addTupleMapping("filter1", "FILTER_TUPLE_1", "JOIN_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("source", "SENSOR_TUPLE", "SENSML_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("sensML", "SENSML_TUPLE", "RANGE_FILTER_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("rangeFilter", "RANGE_FILTER_TUPLE", "BLOOM_FILTER_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("bloomFilter", "BLOOM_FILTER_TUPLE", "INTERPOLATION_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("interpolation", "INTERPOLATION_TUPLE", "JOIN_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("join", "JOIN_TUPLE", "ANNOTATE_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("annotate", "ANNOTATE_TUPLE", "AZURE_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("annotate", "ANNOTATE_TUPLE", "CSV_TO_SENSML_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("csvToSenML", "CSV_TO_SENSML_TUPLE", "MQTT_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mqtt", "MQTT_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("azure", "AZURE_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
 
         List<AppLoop> loops = getAppLoops();
         application.setLoops(loops);
@@ -252,9 +419,37 @@ public class WorkflowTestSimple {
     }
 
     private static List<AppLoop> getAppLoops() {
-        AppLoop loop1 = new AppLoop(new ArrayList<String>(){{add("s-0-1");add("source1");add("filter1");}});
+        ArrayList<String> loop1Modules = new ArrayList<String>() {{
+            add("source");
+            add("sensML");
+            add("rangeFilter");
+            add("bloomFilter");
+            add("interpolation");
+            add("join");
+            add("annotate");
+            add("azure");
+            add("sink");
+        }};
+
+        ArrayList<String> loop2Modules = new ArrayList<String>() {{
+            add("source");
+            add("sensML");
+            add("rangeFilter");
+            add("bloomFilter");
+            add("interpolation");
+            add("join");
+            add("annotate");
+            add("csvToSenML");
+            add("mqtt");
+            add("sink");
+        }};
+
+
+        AppLoop loop1 = new AppLoop(loop1Modules);
+        AppLoop loop2 = new AppLoop(loop2Modules);
         List<AppLoop> loops = new ArrayList<>();
         loops.add(loop1);
+        loops.add(loop2);
         return loops;
     }
 }

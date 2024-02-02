@@ -4,6 +4,7 @@ import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.core.CloudSimTags;
+import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.power.PowerDatacenter;
 import org.cloudbus.cloudsim.power.PowerHost;
@@ -234,7 +235,6 @@ public class FogDevice extends PowerDatacenter {
 
     /**
      * Overrides this method when making a new and different type of resource. <br>
-     * <b>NOTE:</b> You do not need to override {@link #body()} method, if you use this method.
      *
      * @pre $none
      * @post $none
@@ -664,6 +664,10 @@ public class FogDevice extends PowerDatacenter {
         if (getName().equals("cloud")) {
             updateCloudTraffic();
         }
+
+        if (getName().equals("cloud") && tuple.getTupleType().equals("SINK_TUPLE")) {
+        	totalTuplesArrived++;
+        }
 		
 		/*if(getName().equals("d-0") && tuple.getTupleType().equals("_SENSOR")){
 			System.out.println(++numClients);
@@ -704,6 +708,11 @@ public class FogDevice extends PowerDatacenter {
             sendNow(getControllerId(), FogEvents.TUPLE_FINISHED, null);
         }
 
+        if (getName().equals("AnnotateDevice") && tuple.getDirection() == Tuple.DOWN) {
+            int a = 1;
+            a++;
+        }
+
         if (appToModulesMap.containsKey(tuple.getAppId())) {
             if (appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
                 int vmId = -1;
@@ -723,8 +732,17 @@ public class FogDevice extends PowerDatacenter {
                 if (tuple.getDirection() == Tuple.UP)
                     sendUp(tuple);
                 else if (tuple.getDirection() == Tuple.DOWN) {
-                    for (int childId : getChildrenIds())
-                        sendDown(tuple, childId);
+                    for (int childId : getChildrenIds()) {
+
+                        //TODO: ADDED CODE
+                        SimEntity simEntity = CloudSim.getEntity(childId);
+                        FogDevice childDevice = (FogDevice) simEntity;
+                        if (childDevice.appToModulesMap.containsKey(tuple.getAppId()) &&
+                                childDevice.appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
+                            sendDown(tuple, childId);
+                        }
+                    }
+
                 }
             } else {
                 sendUp(tuple);
@@ -841,10 +859,23 @@ public class FogDevice extends PowerDatacenter {
     }
 
     protected void sendUpFreeLink(Tuple tuple) {
-        double networkDelay = tuple.getCloudletFileSize() / getUplinkBandwidth();
+        // Calculates the transmission time for a tuple according to the bandwidth and size.
+        double transmissionDelay = tuple.getCloudletFileSize() / getUplinkBandwidth();
+
+        //Sets north link as busy
         setNorthLinkBusy(true);
-        send(getId(), networkDelay, FogEvents.UPDATE_NORTH_TUPLE_QUEUE);
-        send(parentId, networkDelay + getUplinkLatency(), FogEvents.TUPLE_ARRIVAL, tuple);
+
+        ///// send(destinationDeviceId, delay, eventType, tuple) //////
+
+        // Internal send event to itself for updating tuple queue
+        // The tuple is removed from the queue after transmissionDelay time is elapsed.
+        send(getId(), transmissionDelay, FogEvents.UPDATE_NORTH_TUPLE_QUEUE);
+
+        // Send event to send the tuple to the parent fog device
+        // the total delay is transmissionDelay + getUplinkLatency()
+        send(parentId, transmissionDelay + getUplinkLatency(), FogEvents.TUPLE_ARRIVAL, tuple);
+
+        // Calculates the network usage based on the tuple size and latency
         NetworkUsageMonitor.sendingTuple(getUplinkLatency(), tuple.getCloudletFileSize());
     }
 

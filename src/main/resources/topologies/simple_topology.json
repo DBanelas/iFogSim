@@ -1,12 +1,12 @@
 {
-  "nodes": [
-    {
-      "sensorType": "TEMP",
-      "name": "s-0-1",
-      "type": "SENSOR",
-      "distribution": 2,
-      "value": 5.0
-    },
+    "nodes": [
+      {
+        "sensorType": "TEMP",
+        "name": "s-0-1",
+        "type": "SENSOR",
+        "distribution": 2,
+        "value": 5.0
+      },
     {
       "level": 0,
       "upBw": 10000,

@@ -13,7 +13,6 @@ import org.fog.utils.*;
 import org.fog.utils.distribution.Distribution;
 
 public class Sensor extends SimEntity{
-	
 	private int gatewayDeviceId;
 	private GeoLocation geoLocation;
 	private long outputSize;

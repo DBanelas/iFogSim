@@ -85,12 +85,9 @@ public class FogGui extends JFrame {
 	
 	public final void initUI() {
 		setUIFont (new javax.swing.plaf.FontUIResource("Serif",Font.BOLD,18));
-
         panel = new JPanel();
         panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        
         graph = new JPanel(new java.awt.GridLayout(1, 2));
-        
 		initBar();
 		doPosition();
 	}
@@ -115,7 +112,7 @@ public class FogGui extends JFrame {
     	//---------- Start ActionListener ----------
     	ActionListener readPhyTopoListener = new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-		    	physicalTopologyFile = importFile("josn");
+		    	physicalTopologyFile = importFile("json");
             	checkImportStatus();
 		    }
 		};
@@ -127,13 +124,13 @@ public class FogGui extends JFrame {
 		};
 		ActionListener readWorkloadBkListener = new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-		    	workloads_background = importFile("cvs");
+		    	workloads_background = importFile("csv");
 		    	checkImportStatus();
 		    }
 		};
 		ActionListener readWorkloadListener = new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-		    	workloads = importFile("cvs");
+		    	workloads = importFile("csv");
 		    	checkImportStatus();
 		    }
 		};
@@ -175,7 +172,7 @@ public class FogGui extends JFrame {
 		};
 		ActionListener importPhyTopoListener = new ActionListener() {
 		    public void actionPerformed(ActionEvent e) {
-		    	String fileName = importFile("josn");
+		    	String fileName = importFile("json");
 		    	Graph phyGraph= Bridge.jsonToGraph(fileName, 0);
 		    	physicalGraph = phyGraph;
 		    	physicalCanvas.setGraph(physicalGraph);
