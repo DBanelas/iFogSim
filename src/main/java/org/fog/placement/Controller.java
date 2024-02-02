@@ -58,12 +58,15 @@ public class Controller extends SimEntity{
 	
 	private void connectWithLatencies(){
 		for(FogDevice fogDevice : getFogDevices()){
-			FogDevice parent = getFogDeviceById(fogDevice.getParentId());
-			if(parent == null)
-				continue;
-			double latency = fogDevice.getUplinkLatency();
-			parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
-			parent.getChildrenIds().add(fogDevice.getId());
+			for(int parentID : fogDevice.getParentIds()) {
+				FogDevice parent = getFogDeviceById(parentID);
+				if(parent == null) {
+					continue;
+				}
+				double latency = fogDevice.getUplinkLatency();
+				parent.getChildToLatencyMap().put(fogDevice.getId(), latency);
+				parent.getChildrenIds().add(fogDevice.getId());
+			}
 		}
 	}
 	
@@ -131,7 +134,7 @@ public class Controller extends SimEntity{
 	private void printRemainingEventsInFogDevices() {
 		System.out.println("REMAINING EVENTS IN FOG DEVICES");
 		for(FogDevice fogDevice : getFogDevices()){
-			System.out.println(fogDevice.getName()+" : "+fogDevice.getNorthTupleQueue().size());
+			System.out.println(fogDevice.getName()+ " : " +fogDevice.getNorthTupleQueue().size());
 		}
 		System.out.println("---------------------------------------------");
 		System.out.println();

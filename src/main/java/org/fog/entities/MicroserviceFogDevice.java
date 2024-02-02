@@ -229,8 +229,11 @@ public class MicroserviceFogDevice extends FogDevice {
         } else {
             if (tuple.getDestinationDeviceId() != -1) {
                 int nextDeviceToSend = routingTable.get(tuple.getDestinationDeviceId());
-                if (nextDeviceToSend == parentId)
-                    sendUp(tuple);
+                if (nextDeviceToSend == parentId) {
+
+                    int a = 1;
+                }
+//                    sendUp(tuple);
                 else if (childrenIds.contains(nextDeviceToSend))
                     sendDown(tuple, nextDeviceToSend);
                 else if (getClusterMembers().contains(nextDeviceToSend))
@@ -556,8 +559,10 @@ public class MicroserviceFogDevice extends FogDevice {
             }
         } else if (tuple.getDestinationDeviceId() != -1) {
             int nextDeviceToSend = routingTable.get(tuple.getDestinationDeviceId());
-            if (nextDeviceToSend == parentId)
-                sendUp(tuple);
+            if (nextDeviceToSend == parentId){
+                int a = 1;
+            }
+//                sendUp(tuple);
             else if (childrenIds.contains(nextDeviceToSend))
                 sendDown(tuple, nextDeviceToSend);
             else if (getClusterMembers().contains(nextDeviceToSend))
@@ -651,7 +656,8 @@ public class MicroserviceFogDevice extends FogDevice {
 //            if (Config.ENABLE_NETWORK_USAGE_AT_PLACEMENT)
 //                NetworkUsageMonitor.sendingManagementTuple(getUplinkLatency(), tuple.getCloudletFileSize());
         } else {
-            super.sendUpFreeLink(tuple);
+                int a = 1;
+//            super.sendUpFreeLink(tuple);
         }
 
     }
