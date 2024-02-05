@@ -35,8 +35,8 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 60;
-    static int NUM_SENSORS = 100;
+    static double TRANSMISSION_RATE = 1000;
+    static int NUM_SENSORS = 1;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
@@ -102,8 +102,15 @@ public class WorkflowTestSimple {
     private static ModuleMapping createCustomMapping(Application application) {
         ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
         moduleMapping.addModuleToDevice("source", "SourceDevice");
-        moduleMapping.addModuleToDevice("map", "MapDevice");
-        moduleMapping.addModuleToDevice("filter", "FilterDevice");
+        moduleMapping.addModuleToDevice("senML", "SenMLDevice");
+        moduleMapping.addModuleToDevice("rangeFilter", "RangeFilterDevice");
+        moduleMapping.addModuleToDevice("bloomFilter", "SenMLDevice");
+        moduleMapping.addModuleToDevice("interpolation", "InterpolationDevice");
+        moduleMapping.addModuleToDevice("join", "JoinDevice");
+        moduleMapping.addModuleToDevice("annotate", "AnnotateDevice");
+        moduleMapping.addModuleToDevice("azure", "AzureDevice");
+        moduleMapping.addModuleToDevice("csv", "CsVDevice");
+        moduleMapping.addModuleToDevice("mqtt", "MQTTDevice");
         moduleMapping.addModuleToDevice("sink", "SinkDevice");
         return moduleMapping;
     }
@@ -206,33 +213,55 @@ public class WorkflowTestSimple {
     private static void createTestTopology(int userID, String appID) {
         FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
-        cloud.addParentID(-1);
+        cloud.addParentIdWithLatency(-1, -1);
 
         FogDevice sinkDevice = createFogDevice("SinkDevice", 100000, 40000, 100000, 100000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(sinkDevice);
 
-        FogDevice mapDevice = createFogDevice("MapDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(mapDevice);
+        FogDevice mqttDevice = createFogDevice("MQTTDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(mqttDevice);
 
-        FogDevice filterDevice = createFogDevice("FilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(filterDevice);
+        FogDevice csvDevice = createFogDevice("CsVDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(csvDevice);
+
+        FogDevice azureDevice = createFogDevice("AzureDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(azureDevice);
+
+        FogDevice annotateDevice = createFogDevice("AnnotateDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(annotateDevice);
+
+        FogDevice joinDevice = createFogDevice("JoinDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(joinDevice);
+
+        FogDevice interpolationDevice = createFogDevice("InterpolationDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(interpolationDevice);
+
+        //bloom filter is in the same device as senML
+//        FogDevice bloomFilterDevice = createFogDevice("BloomFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(bloomFilterDevice);
+
+        FogDevice rangeFilterDevice = createFogDevice("RangeFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(rangeFilterDevice);
+
+        FogDevice senMLDevice = createFogDevice("SenMLDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+        fogDevices.add(senMLDevice);
 
         FogDevice sourceDevice = createFogDevice("SourceDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
         fogDevices.add(sourceDevice);
 
-        sinkDevice.addParentID(-1);
 
-        mapDevice.addParentID(sinkDevice.getId());
-        mapDevice.addLatencyForParent(sinkDevice.getId(), 2.0);
-
-        filterDevice.addParentID(sinkDevice.getId());
-        filterDevice.addLatencyForParent(sinkDevice.getId(), 2.0);
-
-        sourceDevice.addParentID(mapDevice.getId());
-        sourceDevice.addLatencyForParent(mapDevice.getId(), 2.0);
-
-        sourceDevice.addParentID(filterDevice.getId());
-        sourceDevice.addLatencyForParent(filterDevice.getId(), 2.0);
+        sourceDevice.addParentIdWithLatency(senMLDevice.getId(), 2.0);
+        senMLDevice.addParentIdWithLatency(rangeFilterDevice.getId(), 1.0);
+//        rangeFilterDevice.addParentIdWithLatency(senMLDevice.getId(), 1.0);
+        senMLDevice.addParentIdWithLatency(interpolationDevice.getId(), 1.0);
+        interpolationDevice.addParentIdWithLatency(joinDevice.getId(), 1.0);
+        joinDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
+        annotateDevice.addParentIdWithLatency(azureDevice.getId(), 1.0);
+        annotateDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
+        csvDevice.addParentIdWithLatency(mqttDevice.getId(), 1.0);
+        mqttDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
+        azureDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
+        sinkDevice.addParentIdWithLatency(-1, -1);
 
         // Create sensors  to gateway device
         for (int i = 0; i < NUM_SENSORS; i++) {
@@ -331,22 +360,43 @@ public class WorkflowTestSimple {
         Application application = Application.createApplication(appId, userId);
         // Adding modules to the appliction graph
         application.addAppModule("source", 10);
-        application.addAppModule("map", 10);
-        application.addAppModule("filter", 10);
+        application.addAppModule("senML", 10);
+        application.addAppModule("rangeFilter", 10);
+        application.addAppModule("bloomFilter", 10);
+        application.addAppModule("interpolation", 10);
+        application.addAppModule("join", 10);
+        application.addAppModule("annotate", 10);
+        application.addAppModule("azure", 10);
+        application.addAppModule("csv", 10);
+        application.addAppModule("mqtt", 10);
         application.addAppModule("sink", 10);
 
         // Connecting the application modules (vertices) in the application model (directed graph) with edges
         application.addAppEdge("SENSOR_TUPLE", "source", 1000, 2000, "SENSOR_TUPLE", Tuple.UP, AppEdge.SENSOR);
-        application.addAppEdge("source", "map", 1000, 2000, "MAP_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("source", "filter", 1000, 2000, "FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("map", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("filter", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("source", "senML", 1000, 2000, "SENML_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("senML", "rangeFilter", 1000, 2000, "RANGE_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("bloomFilter", "interpolation", 1000, 2000, "INTERPOLATION_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("interpolation", "join", 1000, 2000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("join", "annotate", 1000, 2000, "ANNOTATE_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("annotate", "azure", 1000, 2000, "AZURE_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("annotate", "csv", 1000, 2000, "CSV_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("csv", "mqtt", 1000, 2000, "MQTT_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mqtt", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("azure", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
 
         // Defining the input-output relationships (represented by selectivity) of the application modules.
-        application.addTupleMapping("source", "SENSOR_TUPLE", "MAP_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("source", "SENSOR_TUPLE", "FILTER_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("map", "MAP_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
-        application.addTupleMapping("filter", "FILTER_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("source", "SENSOR_TUPLE", "SENML_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("senML", "SENML_TUPLE", "RANGE_FILTER_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("rangeFilter", "RANGE_FILTER_TUPLE", "BLOOM_FILTER_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("bloomFilter", "BLOOM_FILTER_TUPLE", "INTERPOLATION_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("interpolation", "INTERPOLATION_TUPLE", "JOIN_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("join", "JOIN_TUPLE", "ANNOTATE_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("annotate", "ANNOTATE_TUPLE", "AZURE_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("annotate", "ANNOTATE_TUPLE", "CSV_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("csv", "CSV_TUPLE", "MQTT_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("mqtt", "MQTT_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
+        application.addTupleMapping("azure", "AZURE_TUPLE", "SINK_TUPLE", new FractionalSelectivity(1.0));
 
         List<AppLoop> loops = getAppLoops();
         application.setLoops(loops);
@@ -356,18 +406,32 @@ public class WorkflowTestSimple {
     private static List<AppLoop> getAppLoops() {
         ArrayList<String> loop1Modules = new ArrayList<String>() {{
             add("source");
-            add("map");
+            add("senML");
+            add("rangeFilter");
+            add("bloomFilter");
+            add("interpolation");
+            add("join");
+            add("annotate");
+            add("azure");
+            add("csv");
+            add("mqtt");
             add("sink");
         }};
 
         ArrayList<String> loop2Modules = new ArrayList<String>() {{
             add("source");
-            add("filter");
+            add("senML");
+            add("rangeFilter");
+            add("bloomFilter");
+            add("interpolation");
+            add("join");
+            add("annotate");
+            add("azure");
             add("sink");
         }};
 
-        AppLoop loop1 = new AppLoop(loop1Modules);
-        AppLoop loop2 = new AppLoop(loop2Modules);
+        AppLoop loop1 = new AppLoop(loop2Modules);
+        AppLoop loop2 = new AppLoop(loop1Modules);
         List<AppLoop> loops = new ArrayList<>();
         loops.add(loop1);
         loops.add(loop2);

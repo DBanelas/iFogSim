@@ -551,9 +551,6 @@ public class FogDevice extends PowerDatacenter {
                     TimeKeeper.getInstance().getLoopIdToTupleIds().put(loop.getLoopId(), new ArrayList<Integer>());
                 TimeKeeper.getInstance().getLoopIdToTupleIds().get(loop.getLoopId()).add(tupleId);
                 TimeKeeper.getInstance().getEmitTimes().put(tupleId, CloudSim.clock());
-
-                //Logger.debug(getName(), "\tSENDING\t"+tuple.getActualTupleId()+"\tSrc:"+srcModule+"\tDest:"+destModule);
-
             }
         }
     }
@@ -741,8 +738,10 @@ public class FogDevice extends PowerDatacenter {
     protected void updateTimingsOnReceipt(Tuple tuple) {
         Application app = getApplicationMap().get(tuple.getAppId());
         String srcModule = tuple.getSrcModuleName();
+        int tupleID = tuple.getActualTupleId();
         String destModule = tuple.getDestModuleName();
         List<AppLoop> loops = app.getLoops();
+
         for (AppLoop loop : loops) {
             if (loop.hasEdge(srcModule, destModule) && loop.isEndModule(destModule)) {
                 Double startTime = TimeKeeper.getInstance().getEmitTimes().get(tuple.getActualTupleId());
@@ -755,7 +754,7 @@ public class FogDevice extends PowerDatacenter {
                 double currentAverage = TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loop.getLoopId());
                 int currentCount = TimeKeeper.getInstance().getLoopIdToCurrentNum().get(loop.getLoopId());
                 double delay = CloudSim.clock() - TimeKeeper.getInstance().getEmitTimes().get(tuple.getActualTupleId());
-                TimeKeeper.getInstance().getEmitTimes().remove(tuple.getActualTupleId());
+//                TimeKeeper.getInstance().getEmitTimes().remove(tuple.getActualTupleId());
                 double newAverage = (currentAverage * currentCount + delay) / (currentCount + 1);
                 TimeKeeper.getInstance().getLoopIdToCurrentAverage().put(loop.getLoopId(), newAverage);
                 TimeKeeper.getInstance().getLoopIdToCurrentNum().put(loop.getLoopId(), currentCount + 1);
@@ -923,14 +922,10 @@ public class FogDevice extends PowerDatacenter {
         }
     }
 
-    public void addParentID(int parentID) {
+    public void addParentIdWithLatency(int parentID, double latency) {
         this.parentIds.add(parentID);
-    }
-
-    public void addLatencyForParent(int parentID, double latency) {
         this.parentToLatencyMap.put(parentID, latency);
     }
-
 
     protected void sendToSelf(Tuple tuple) {
         send(getId(), CloudSim.getMinTimeBetweenEvents(), FogEvents.TUPLE_ARRIVAL, tuple);

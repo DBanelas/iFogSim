@@ -114,7 +114,7 @@ public class Sensor extends SimEntity{
 		this.totalTuplesSent++;
 		this.sentTupleIds.add(tuple.getActualTupleId());
 
-		send(gatewayDeviceId, getLatency(), FogEvents.TUPLE_ARRIVAL,tuple);
+		send(gatewayDeviceId, getLatency(), FogEvents.TUPLE_ARRIVAL, tuple);
 	}
 	
 	protected int updateTimings(String src, String dest){
