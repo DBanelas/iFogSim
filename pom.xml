@@ -45,7 +45,6 @@
             <artifactId>json-simple</artifactId>
             <version>1.1.1</version>
         </dependency>
-
         <!-- Add more dependencies here -->
     </dependencies>
 
@@ -53,14 +52,14 @@
         <plugins>
             <plugin>
                 <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.6.0</version>
                 <configuration>
                     <descriptorRefs>
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass>org.fog.test.WorkflowTestComplex</mainClass> <!-- Specify your main class here -->
+                            <mainClass>org.fog.test.WorkflowTestSimple</mainClass> <!-- Specify your main class here -->
                         </manifest>
                     </archive>
                 </configuration>

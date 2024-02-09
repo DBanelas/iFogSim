@@ -25,18 +25,15 @@ import org.fog.utils.FogUtils;
 import org.fog.utils.Logger;
 import org.fog.utils.TimeKeeper;
 import org.fog.utils.distribution.DeterministicDistribution;
-import sun.util.resources.cldr.nl.CalendarData_nl_NL;
-
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class WorkflowTestSimple {
 
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 1000;
-    static int NUM_SENSORS = 1;
+    static double TRANSMISSION_RATE = 10;
+    static int NUM_SENSORS = 100;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
@@ -104,7 +101,7 @@ public class WorkflowTestSimple {
         moduleMapping.addModuleToDevice("source", "SourceDevice");
         moduleMapping.addModuleToDevice("senML", "SenMLDevice");
         moduleMapping.addModuleToDevice("rangeFilter", "RangeFilterDevice");
-        moduleMapping.addModuleToDevice("bloomFilter", "SenMLDevice");
+        moduleMapping.addModuleToDevice("bloomFilter", "CsVDevice");
         moduleMapping.addModuleToDevice("interpolation", "InterpolationDevice");
         moduleMapping.addModuleToDevice("join", "JoinDevice");
         moduleMapping.addModuleToDevice("annotate", "AnnotateDevice");
@@ -183,33 +180,6 @@ public class WorkflowTestSimple {
         return fogdevice;
     }
 
-    /**
-     * Method to print the topology per level
-     */
-//    private static void printTopology() {
-//        System.out.println("------------ LEVEL 0: -------------");
-//        for (FogDevice fogDevice : levelToDeviceList.get(0)) {
-//            System.out.println(fogDevice.getName());
-//        }
-//        System.out.println("------------ LEVEL 1: -------------");
-//        for (FogDevice fogDevice : levelToDeviceList.get(1)) {
-//            System.out.println(fogDevice.getName());
-//        }
-//        System.out.println("------------ LEVEL 2: -------------");
-//        for (FogDevice fogDevice : levelToDeviceList.get(2)) {
-//            System.out.println(fogDevice.getName());
-//        }
-//        System.out.println("------------ LEVEL 3: -------------");
-//        for (FogDevice fogDevice : levelToDeviceList.get(3)) {
-//            List<String> sensorNames = gatewayToSensorList.get(fogDevice.getName())
-//                    .stream()
-//                    .map(Sensor::getName)
-//                    .collect(Collectors.toList());
-//            System.out.println(fogDevice.getName() + " with connected sensors: " + sensorNames);
-//        }
-//
-//    }
-
     private static void createTestTopology(int userID, String appID) {
         FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
@@ -251,16 +221,23 @@ public class WorkflowTestSimple {
 
 
         sourceDevice.addParentIdWithLatency(senMLDevice.getId(), 2.0);
+
+
+
         senMLDevice.addParentIdWithLatency(rangeFilterDevice.getId(), 1.0);
-//        rangeFilterDevice.addParentIdWithLatency(senMLDevice.getId(), 1.0);
-        senMLDevice.addParentIdWithLatency(interpolationDevice.getId(), 1.0);
+        rangeFilterDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
+
+        csvDevice.addParentIdWithLatency(mqttDevice.getId(), 1.0);
+        csvDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
+        csvDevice.addParentIdWithLatency(interpolationDevice.getId(), 1.0);
+
         interpolationDevice.addParentIdWithLatency(joinDevice.getId(), 1.0);
         joinDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
         annotateDevice.addParentIdWithLatency(azureDevice.getId(), 1.0);
         annotateDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
-        csvDevice.addParentIdWithLatency(mqttDevice.getId(), 1.0);
         mqttDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
         azureDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
+
         sinkDevice.addParentIdWithLatency(-1, -1);
 
         // Create sensors  to gateway device
@@ -375,7 +352,7 @@ public class WorkflowTestSimple {
         application.addAppEdge("SENSOR_TUPLE", "source", 1000, 2000, "SENSOR_TUPLE", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("source", "senML", 1000, 2000, "SENML_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("senML", "rangeFilter", 1000, 2000, "RANGE_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.DOWN, AppEdge.MODULE);
+        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("bloomFilter", "interpolation", 1000, 2000, "INTERPOLATION_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("interpolation", "join", 1000, 2000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("join", "annotate", 1000, 2000, "ANNOTATE_TUPLE", Tuple.UP, AppEdge.MODULE);
