@@ -60,6 +60,7 @@
                     <archive>
                         <manifest>
                             <mainClass>org.fog.test.WorkflowTestSimple</mainClass> <!-- Specify your main class here -->
+
                         </manifest>
                     </archive>
                 </configuration>
