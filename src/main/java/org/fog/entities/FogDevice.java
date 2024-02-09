@@ -22,8 +22,13 @@ import org.fog.scheduler.StreamOperatorScheduler;
 import org.fog.utils.*;
 import org.json.simple.JSONObject;
 
-import java.awt.event.PaintEvent;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.HashMap;
+
 
 public class FogDevice extends PowerDatacenter {
     protected Queue<Pair<Tuple, Integer>> northTupleQueue;
