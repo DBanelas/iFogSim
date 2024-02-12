@@ -20,10 +20,7 @@ import org.fog.placement.ModulePlacement;
 import org.fog.placement.ModulePlacementMapping;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
-import org.fog.utils.FogLinearPowerModel;
-import org.fog.utils.FogUtils;
-import org.fog.utils.Logger;
-import org.fog.utils.TimeKeeper;
+import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
 import java.util.*;
 
@@ -32,13 +29,13 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 10;
+    static double TRANSMISSION_RATE = 60;
     static int NUM_SENSORS = 100;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
     public static void main(String[] args) {
-
+        Config.MAX_SIMULATION_TIME = 500;
         Log.printLine("Starting WorkflowTest...");
         Logger.ENABLED = true;
 
