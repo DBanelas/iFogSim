@@ -3,7 +3,7 @@ package org.fog.utils;
 public class Config {
 
 	public static final double RESOURCE_MGMT_INTERVAL = 100;
-	public static int MAX_SIMULATION_TIME = 24 * 60 * 60;
+	public static int MAX_SIMULATION_TIME = 50;
 //	public static int MAX_SIMULATION_TIME = ; // 24 minutes of simulation time
 //	public static int MAX_SIMULATION_TIME = 24 * 60; // 24 minutes of simulation time
 	public static int RESOURCE_MANAGE_INTERVAL = 100;
@@ -25,4 +25,8 @@ public class Config {
 	public static double clusteringLatency = 2.0; //milisecond
 
 	public static final int TRANSMISSION_START_DELAY = 50;
+
+	public static void setMaxSimulationTime(int maxSimulationTime) {
+		MAX_SIMULATION_TIME = maxSimulationTime;
+	}
 }

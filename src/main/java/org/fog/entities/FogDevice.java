@@ -714,30 +714,35 @@ public class FogDevice extends PowerDatacenter {
         }
 
 
-        if (appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
-            int vmId = -1;
-            for (Vm vm : getHost().getVmList()) {
-                if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))
-                    vmId = vm.getId();
-            }
-            if (vmId < 0
-                    || (tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
-                    tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId)) {
-                return;
-            }
-            tuple.setVmId(vmId);
-            updateTimingsOnReceipt(tuple);
-            executeTuple(ev, tuple.getDestModuleName());
-        } else if (tuple.getDestModuleName() != null) {
-            if (tuple.getDirection() == Tuple.UP) {
+        if (appToModulesMap.containsKey(tuple.getAppId())) {
+            if (appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
+                int vmId = -1;
+                for (Vm vm : getHost().getVmList()) {
+                    if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))
+                        vmId = vm.getId();
+                }
+                if (vmId < 0
+                        || (tuple.getModuleCopyMap().containsKey(tuple.getDestModuleName()) &&
+                        tuple.getModuleCopyMap().get(tuple.getDestModuleName()) != vmId)) {
+                    return;
+                }
+                tuple.setVmId(vmId);
+                updateTimingsOnReceipt(tuple);
+                executeTuple(ev, tuple.getDestModuleName());
+            } else if (tuple.getDestModuleName() != null) {
+                if (tuple.getDirection() == Tuple.UP) {
+                    sendToCorrectParentDevice(tuple);
+                }
+                else if (tuple.getDirection() == Tuple.DOWN) {
+                    sendToCorrectChildDevice(tuple);
+                }
+            } else {
                 sendToCorrectParentDevice(tuple);
             }
-            else if (tuple.getDirection() == Tuple.DOWN) {
-                sendToCorrectChildDevice(tuple);
-            }
         } else {
-            sendToCorrectParentDevice(tuple);
+            sendFromGatewayToProcessingParent(tuple);
         }
+
     }
 
     protected void updateTimingsOnReceipt(Tuple tuple) {
@@ -833,7 +838,6 @@ public class FogDevice extends PowerDatacenter {
         this.processVmMigrate(ev, false);
     }
 
-
     protected void updateNorthTupleQueue() {
         if (!getNorthTupleQueue().isEmpty()) {
             Pair<Tuple, Integer> pair  = getNorthTupleQueue().poll();
@@ -875,11 +879,18 @@ public class FogDevice extends PowerDatacenter {
         }
     }
 
+    protected void sendFromGatewayToProcessingParent(Tuple tuple){
+        if (getParentIds().size() > 1) throw new IllegalArgumentException("More than one parent found for a gateway device");
+        int parentID = getParentIds().get(0);
+        sendUp(tuple, parentID);
+    }
+
     protected void sendToCorrectParentDevice(Tuple tuple) {
         for (int parentID : getParentIds()) {
             //TODO: ADDED CODE
             SimEntity simEntity = CloudSim.getEntity(parentID);
             FogDevice parentDevice = (FogDevice) simEntity;
+            if (!parentDevice.appToModulesMap.containsKey(tuple.getAppId())) continue;
             if (parentDevice.appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
                 sendUp(tuple, parentID);
             }

@@ -101,7 +101,7 @@ public class Controller extends SimEntity{
 			manageResources();
 			break;
 		case FogEvents.STOP_SIMULATION:
-			CloudSim.stopSimulation();
+			CloudSim.terminateSimulation();
 			printTimeDetails();
 			printPowerDetails();
 			printCostDetails();
@@ -114,7 +114,6 @@ public class Controller extends SimEntity{
 //			printTotalTuplesArrivedAtFogDevices();
 			printRemainingEventsInFogDevices();
 			printFutureQueueSize();
-			System.exit(0);
 			break;
 		}
 	}

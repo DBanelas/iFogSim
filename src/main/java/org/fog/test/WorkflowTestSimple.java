@@ -35,7 +35,7 @@ public class WorkflowTestSimple {
     static boolean TRACE_FLAG = false;
 
     public static void main(String[] args) {
-        Config.MAX_SIMULATION_TIME = 500;
+        Config.setMaxSimulationTime(1000);
         Log.printLine("Starting WorkflowTest...");
         Logger.ENABLED = true;
 
@@ -63,7 +63,7 @@ public class WorkflowTestSimple {
 
             //Create a controller and the module mapping (all cloud in this case)
             Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
-            ModuleMapping moduleMapping = createCustomMapping(application);
+            ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
             ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
             //Submit application to be executed
@@ -72,7 +72,7 @@ public class WorkflowTestSimple {
             //Start application
             TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
             CloudSim.startSimulation();
-            CloudSim.stopSimulation();
+//            CloudSim.stopSimulation();
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -93,21 +93,32 @@ public class WorkflowTestSimple {
         });
     }
 
-    private static ModuleMapping createCustomMapping(Application application) {
+    private static ModuleMapping createAllCloudModuleMapping(Application app) {
+        // Create a new ModuleMapping instance
         ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
-        moduleMapping.addModuleToDevice("source", "SourceDevice");
-        moduleMapping.addModuleToDevice("senML", "SenMLDevice");
-        moduleMapping.addModuleToDevice("rangeFilter", "RangeFilterDevice");
-        moduleMapping.addModuleToDevice("bloomFilter", "CsVDevice");
-        moduleMapping.addModuleToDevice("interpolation", "InterpolationDevice");
-        moduleMapping.addModuleToDevice("join", "JoinDevice");
-        moduleMapping.addModuleToDevice("annotate", "AnnotateDevice");
-        moduleMapping.addModuleToDevice("azure", "AzureDevice");
-        moduleMapping.addModuleToDevice("csv", "CsVDevice");
-        moduleMapping.addModuleToDevice("mqtt", "MQTTDevice");
-        moduleMapping.addModuleToDevice("sink", "SinkDevice");
+
+        // Iterate over all module names in the application
+        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
+
+        // Return the populated ModuleMapping instance
         return moduleMapping;
     }
+
+//    private static ModuleMapping createCustomMapping(Application application) {
+//        ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
+//        moduleMapping.addModuleToDevice("source", "SourceDevice");
+//        moduleMapping.addModuleToDevice("senML", "SenMLDevice");
+//        moduleMapping.addModuleToDevice("rangeFilter", "RangeFilterDevice");
+//        moduleMapping.addModuleToDevice("bloomFilter", "CsVDevice");
+//        moduleMapping.addModuleToDevice("interpolation", "InterpolationDevice");
+//        moduleMapping.addModuleToDevice("join", "JoinDevice");
+//        moduleMapping.addModuleToDevice("annotate", "AnnotateDevice");
+//        moduleMapping.addModuleToDevice("azure", "AzureDevice");
+//        moduleMapping.addModuleToDevice("csv", "CsVDevice");
+//        moduleMapping.addModuleToDevice("mqtt", "MQTTDevice");
+//        moduleMapping.addModuleToDevice("sink", "SinkDevice");
+//        return moduleMapping;
+//    }
 
 //    private static ModuleMapping createAllCloudModuleMapping(Application app) {
 //        // Create a new ModuleMapping instance
@@ -137,7 +148,7 @@ public class WorkflowTestSimple {
 
         int hostId = FogUtils.generateEntityId();
         long storage = 1000000; // host storage
-        int bw = 10000;
+        int bw = 100000;
 
         PowerHost host = new PowerHost(
                 hostId,
@@ -178,70 +189,70 @@ public class WorkflowTestSimple {
     }
 
     private static void createTestTopology(int userID, String appID) {
-        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
+        FogDevice cloud = createFogDevice("cloud", 1000000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
         cloud.addParentIdWithLatency(-1, -1);
 
-        FogDevice sinkDevice = createFogDevice("SinkDevice", 100000, 40000, 100000, 100000, 0, 0.01, 16*103, 16*83.25);
-        fogDevices.add(sinkDevice);
-
-        FogDevice mqttDevice = createFogDevice("MQTTDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(mqttDevice);
-
-        FogDevice csvDevice = createFogDevice("CsVDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(csvDevice);
-
-        FogDevice azureDevice = createFogDevice("AzureDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(azureDevice);
-
-        FogDevice annotateDevice = createFogDevice("AnnotateDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(annotateDevice);
-
-        FogDevice joinDevice = createFogDevice("JoinDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(joinDevice);
-
-        FogDevice interpolationDevice = createFogDevice("InterpolationDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(interpolationDevice);
+//        FogDevice sinkDevice = createFogDevice("SinkDevice", 100000, 40000, 100000, 100000, 0, 0.01, 16*103, 16*83.25);
+//        fogDevices.add(sinkDevice);
+//
+//        FogDevice mqttDevice = createFogDevice("MQTTDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(mqttDevice);
+//
+//        FogDevice csvDevice = createFogDevice("CsVDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(csvDevice);
+//
+//        FogDevice azureDevice = createFogDevice("AzureDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(azureDevice);
+//
+//        FogDevice annotateDevice = createFogDevice("AnnotateDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(annotateDevice);
+//
+//        FogDevice joinDevice = createFogDevice("JoinDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(joinDevice);
+//
+//        FogDevice interpolationDevice = createFogDevice("InterpolationDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(interpolationDevice);
 
         //bloom filter is in the same device as senML
 //        FogDevice bloomFilterDevice = createFogDevice("BloomFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
 //        fogDevices.add(bloomFilterDevice);
 
-        FogDevice rangeFilterDevice = createFogDevice("RangeFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(rangeFilterDevice);
-
-        FogDevice senMLDevice = createFogDevice("SenMLDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(senMLDevice);
-
-        FogDevice sourceDevice = createFogDevice("SourceDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
-        fogDevices.add(sourceDevice);
-
-
-        sourceDevice.addParentIdWithLatency(senMLDevice.getId(), 2.0);
+//        FogDevice rangeFilterDevice = createFogDevice("RangeFilterDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(rangeFilterDevice);
+//
+//        FogDevice senMLDevice = createFogDevice("SenMLDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(senMLDevice);
+//
+//        FogDevice sourceDevice = createFogDevice("SourceDevice", 60000, 4000, 100000, 100000, 3, 0.0, 107.339, 83.4333);
+//        fogDevices.add(sourceDevice);
 
 
-
-        senMLDevice.addParentIdWithLatency(rangeFilterDevice.getId(), 1.0);
-        rangeFilterDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
-
-        csvDevice.addParentIdWithLatency(mqttDevice.getId(), 1.0);
-        csvDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
-        csvDevice.addParentIdWithLatency(interpolationDevice.getId(), 1.0);
-
-        interpolationDevice.addParentIdWithLatency(joinDevice.getId(), 1.0);
-        joinDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
-        annotateDevice.addParentIdWithLatency(azureDevice.getId(), 1.0);
-        annotateDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
-        mqttDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
-        azureDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
-
-        sinkDevice.addParentIdWithLatency(-1, -1);
+//        sourceDevice.addParentIdWithLatency(senMLDevice.getId(), 2.0);
+//
+//
+//
+//        senMLDevice.addParentIdWithLatency(rangeFilterDevice.getId(), 1.0);
+//        rangeFilterDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
+//
+//        csvDevice.addParentIdWithLatency(mqttDevice.getId(), 1.0);
+//        csvDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
+//        csvDevice.addParentIdWithLatency(interpolationDevice.getId(), 1.0);
+//
+//        interpolationDevice.addParentIdWithLatency(joinDevice.getId(), 1.0);
+//        joinDevice.addParentIdWithLatency(annotateDevice.getId(), 1.0);
+//        annotateDevice.addParentIdWithLatency(azureDevice.getId(), 1.0);
+//        annotateDevice.addParentIdWithLatency(csvDevice.getId(), 1.0);
+//        mqttDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
+//        azureDevice.addParentIdWithLatency(sinkDevice.getId(), 1.0);
+//
+//        sinkDevice.addParentIdWithLatency(-1, -1);
 
         // Create sensors  to gateway device
         for (int i = 0; i < NUM_SENSORS; i++) {
             String sensorID = "sensor-" + i;
             Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE", userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-            sensor.setGatewayDeviceId(sourceDevice.getId());
+            sensor.setGatewayDeviceId(cloud.getId());
             sensor.setLatency(1.0);
             sensors.add(sensor);
         }
