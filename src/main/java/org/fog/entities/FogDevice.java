@@ -526,6 +526,7 @@ public class FogDevice extends PowerDatacenter {
 
                         // Increment total tuples processed by module that processed this tuple
                         application.getModuleByName(tuple.getDestModuleName()).incrementTotalTuplesProcessed();
+                        application.getModuleByName(tuple.getDestModuleName()).incrementTotalTuplesSent();
 
                         List<Tuple> resultantTuples = application.getResultantTuples(tuple.getDestModuleName(), tuple, getId(), vm.getId());
                         for (Tuple resTuple : resultantTuples) {
@@ -716,6 +717,9 @@ public class FogDevice extends PowerDatacenter {
 
         if (appToModulesMap.containsKey(tuple.getAppId())) {
             if (appToModulesMap.get(tuple.getAppId()).contains(tuple.getDestModuleName())) {
+                Application app = getApplicationMap().get(tuple.getAppId());
+                app.getModuleByName(tuple.getDestModuleName()).incrementTotalTuplesRecieved();
+
                 int vmId = -1;
                 for (Vm vm : getHost().getVmList()) {
                     if (((AppModule) vm).getName().equals(tuple.getDestModuleName()))

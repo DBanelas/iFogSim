@@ -7,6 +7,7 @@ import java.util.Map;
 
 import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.CloudletScheduler;
+import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.power.PowerVm;
 import org.fog.application.selectivity.SelectivityModel;
 import org.fog.scheduler.TupleScheduler;
@@ -17,13 +18,16 @@ import org.fog.utils.FogUtils;
  * @author Harshit Gupta
  *
  */
-public class AppModule extends PowerVm{
+public class AppModule extends PowerVm {
 
 	private String name;
 	private String appId;
 	private Map<Pair<String, String>, SelectivityModel> selectivityMap;
 	private int totalTuplesProcessed;
-	
+	private int totalTuplesRecieved;
+	private int totalTuplesSent;
+	private double avgTuplesRecievedPerSec;
+	private double avgTuplesSentPerSec;
 	/**
 	 * A map from the AppModules sending tuples UP to this module to their instance IDs.
 	 * If a new instance ID is detected, the number of instances is incremented.  
@@ -98,6 +102,34 @@ public class AppModule extends PowerVm{
 	public void incrementTotalTuplesProcessed() {
 		this.totalTuplesProcessed++;
 	}
+
+	public void incrementTotalTuplesRecieved() {
+		this.totalTuplesRecieved++;
+		updateAvgTuplesRecievedPerSec();
+	}
+
+	public void incrementTotalTuplesSent() {
+		this.totalTuplesSent++;
+		updateAvgTuplesSentPerSec();
+	}
+
+	private void updateAvgTuplesSentPerSec() {
+		this.avgTuplesSentPerSec = this.totalTuplesSent / CloudSim.clock();
+	}
+
+	private void updateAvgTuplesRecievedPerSec() {
+		this.avgTuplesRecievedPerSec = this.totalTuplesRecieved / CloudSim.clock();
+	}
+
+	public double getAvgTuplesRecievedPerSec() {
+		return avgTuplesRecievedPerSec;
+	}
+
+	public double getAvgTuplesSentPerSec() {
+		return avgTuplesSentPerSec;
+	}
+
+
 	public int getTotalTuplesProcessed() {
 		return totalTuplesProcessed;
 	}

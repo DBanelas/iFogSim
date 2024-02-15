@@ -2,10 +2,7 @@ package org.fog.placement;
 
 import java.util.*;
 
-import org.cloudbus.cloudsim.core.CloudSim;
-import org.cloudbus.cloudsim.core.FutureQueue;
-import org.cloudbus.cloudsim.core.SimEntity;
-import org.cloudbus.cloudsim.core.SimEvent;
+import org.cloudbus.cloudsim.core.*;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
 import org.fog.application.AppEdge;
 import org.fog.application.AppLoop;
@@ -104,18 +101,41 @@ public class Controller extends SimEntity{
 			CloudSim.terminateSimulation();
 			printTimeDetails();
 			printPowerDetails();
-			printCostDetails();
 			printNetworkUsageDetails();
 			printTotalTuplesSentBySensorDevices();
-//			printTuplesSentByEachSensorDevice();
-//			printTotalTuplesArrivedAtActuators();
 			printTotalTuplesProcessedPerAppModule();
 			printThroughputOfEachAppModule();
-//			printTotalTuplesArrivedAtFogDevices();
+			printAvgNumTuplesRecievedPerSec();
+			printAvgNumTuplesSentPerSec();
 			printRemainingEventsInFogDevices();
+			printDeferredQueueSize();
 			printFutureQueueSize();
 			break;
 		}
+	}
+
+	private void printAvgNumTuplesSentPerSec() {
+		System.out.println("AVG NUM TUPLES SENT PER SEC");
+		for(String appId : getApplications().keySet()){
+			Application app = getApplications().get(appId);
+			for(AppModule module : app.getModules()){
+				System.out.println("Avg tuples sent by "+module.getName()+" = "+module.getAvgTuplesSentPerSec());
+			}
+		}
+		System.out.println("---------------------------------------------");
+		System.out.println();
+	}
+
+	private void printAvgNumTuplesRecievedPerSec() {
+		System.out.println("AVG NUM TUPLES RECIEVED PER SEC");
+		for(String appId : getApplications().keySet()){
+			Application app = getApplications().get(appId);
+			for(AppModule module : app.getModules()){
+				System.out.println("Avg tuples recieved by "+module.getName()+" = "+module.getAvgTuplesRecievedPerSec());
+			}
+		}
+		System.out.println("---------------------------------------------");
+		System.out.println();
 	}
 
 	private void printThroughputOfEachAppModule() {
@@ -123,7 +143,7 @@ public class Controller extends SimEntity{
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
 			for(AppModule module : app.getModules()){
-				System.out.println("Throughput of "+module.getName()+" = "+module.getTotalTuplesProcessed()/CloudSim.clock());
+				System.out.println("Throughput of "+module.getName()+" = "+ (double) module.getTotalTuplesProcessed()/CloudSim.clock());
 			}
 		}
 		System.out.println("---------------------------------------------");
@@ -135,6 +155,13 @@ public class Controller extends SimEntity{
 		for(FogDevice fogDevice : getFogDevices()){
 			System.out.println(fogDevice.getName()+ " : " +fogDevice.getNorthTupleQueue().size());
 		}
+		System.out.println("---------------------------------------------");
+		System.out.println();
+	}
+
+	private void printDeferredQueueSize() {
+		System.out.print("DEFERRED QUEUE SIZE : ");
+		System.out.println(CloudSim.getDeferredSize());
 		System.out.println("---------------------------------------------");
 		System.out.println();
 	}
@@ -161,14 +188,6 @@ public class Controller extends SimEntity{
 //		System.out.println("---------------------------------------------");
 //		System.out.println();
 //	}
-
-	private void printTotalTuplesArrivedAtActuators() {
-		System.out.println("TUPLES ARRIVED AT ACTUATORS");
-		for(Actuator actuator : getActuators()){
-			System.out.println("Total tuples arrived at "+actuator.getName()+" = "+actuator.getTotalTuplesArrived());
-		}
-		System.out.println("---------------------------------------------");
-	}
 
 	private void printTotalTuplesProcessedPerAppModule() {
 		System.out.println("TUPLES PROCESSED PER APP MODULE");

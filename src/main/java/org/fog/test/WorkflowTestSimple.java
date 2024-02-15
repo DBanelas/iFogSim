@@ -189,7 +189,7 @@ public class WorkflowTestSimple {
     }
 
     private static void createTestTopology(int userID, String appID) {
-        FogDevice cloud = createFogDevice("cloud", 1000000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
+        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
         cloud.addParentIdWithLatency(-1, -1);
 
@@ -360,7 +360,7 @@ public class WorkflowTestSimple {
         application.addAppEdge("SENSOR_TUPLE", "source", 1000, 2000, "SENSOR_TUPLE", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("source", "senML", 1000, 2000, "SENML_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("senML", "rangeFilter", 1000, 2000, "RANGE_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("rangeFilter", "bloomFilter", 20000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("bloomFilter", "interpolation", 1000, 2000, "INTERPOLATION_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("interpolation", "join", 1000, 2000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("join", "annotate", 1000, 2000, "ANNOTATE_TUPLE", Tuple.UP, AppEdge.MODULE);

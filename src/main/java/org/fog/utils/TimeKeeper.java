@@ -40,6 +40,14 @@ public class TimeKeeper {
 	}
 
 	/**
+	 * Method to clear the data in the TimeKeeper instance.
+	 * Only to be called when an object already exists and needs to be cleared.
+	 */
+	public void clearData(){
+		instance = new TimeKeeper();
+	}
+
+	/**
 	 * Private method to create a TimeKeeper instance.
 	 */
 	private TimeKeeper(){
