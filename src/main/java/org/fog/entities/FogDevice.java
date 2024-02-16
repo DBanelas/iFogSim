@@ -799,6 +799,12 @@ public class FogDevice extends PowerDatacenter {
             }
             module.setNumInstances(instances);
         }
+        
+        if (tuple.getDestModuleName().equals("bloomFilter")) {
+            int a = 1;
+            a++;
+            a++;
+        }
 
         TimeKeeper.getInstance().tupleStartedExecution(tuple);
         updateAllocatedMips(moduleName);
@@ -813,7 +819,7 @@ public class FogDevice extends PowerDatacenter {
             appToModulesMap.put(appId, new ArrayList<String>());
         }
         appToModulesMap.get(appId).add(module.getName());
-        processVmCreate(ev, false);
+//        processVmCreate(ev, false);
         if (module.isBeingInstantiated()) {
             module.setBeingInstantiated(false);
         }
