@@ -29,7 +29,7 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 20;
+    static double TRANSMISSION_RATE = 60;
     static int NUM_SENSORS = 100;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
@@ -286,8 +286,8 @@ public class WorkflowTestSimple {
         application.addAppEdge("annotate", "azure", 1000, 2000, "AZURE_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("annotate", "csv", 1000, 2000, "CSV_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("csv", "mqtt", 1000, 2000, "MQTT_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mqtt", "sink", 100000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("azure", "sink", 100000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mqtt", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("azure", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
 
         // Defining the input-output relationships (represented by selectivity) of the application modules.
         application.addTupleMapping("source", "SENSOR_TUPLE", "SENML_TUPLE", new FractionalSelectivity(1.0));

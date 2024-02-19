@@ -22,6 +22,8 @@ public class ConsoleMetricsExporter implements MetricsExporter {
         JsonNode recsInPerModule = objectMapper.valueToTree(metrics.getRecsInPerModule());
         JsonNode recsOutPerModule = objectMapper.valueToTree(metrics.getRecsOutPerModule());
         JsonNode remainingEventsPerDevice = objectMapper.valueToTree(metrics.getRemainingEventsPerDevice());
+        JsonNode placement = objectMapper.valueToTree(metrics.getPlacement());
+        objectNode.set("placement", placement);
         objectNode.set("latencyPerAppLoop", latencyPerAppLoop);
         objectNode.set("latencyPerTupleType", latencyPerTupleType);
         objectNode.set("energyConsumptionPerDevice", energyConsumptionPerDevice);

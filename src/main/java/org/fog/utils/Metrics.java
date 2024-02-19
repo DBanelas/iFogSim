@@ -102,4 +102,13 @@ public class Metrics {
      * Value: Remaining events
      */
     Map<String, Integer> remainingEventsPerDevice;
+
+    /**
+     * Placement of modules
+     * <br>
+     * Key: Module name
+     * <br>
+     * Value: Device name
+     */
+    Map<String, String> placement;
 }

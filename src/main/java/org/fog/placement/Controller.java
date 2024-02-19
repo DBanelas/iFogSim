@@ -101,6 +101,7 @@ public class Controller extends SimEntity{
 		case FogEvents.STOP_SIMULATION:
 			CloudSim.terminateSimulation();
 			Metrics metrics = new Metrics();
+			setPlacement(metrics);
 			setExecutionTime(metrics);
 			setTupleTypeLatencies(metrics);
 			setAppLoopLatencies(metrics);
@@ -117,6 +118,21 @@ public class Controller extends SimEntity{
 			metricsExporter.export(metrics);
 			break;
 		}
+	}
+
+	private void setPlacement(Metrics metrics) {
+		Map<String, String> placement = new HashMap<>();
+		String appID = "";
+		for (String id : getApplications().keySet()) appID = id;
+
+		ModulePlacement modulePlacement = getAppModulePlacementPolicy().get(appID);
+		for (Integer deviceId : modulePlacement.getDeviceToModuleMap().keySet()) {
+			for (AppModule module : modulePlacement.getDeviceToModuleMap().get(deviceId)) {
+				placement.put(module.getName(), getFogDeviceById(deviceId).getName());
+			}
+		}
+
+		metrics.setPlacement(placement);
 	}
 
 	private void setRecordsOutPerModule(Metrics metrics) {
