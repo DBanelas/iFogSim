@@ -29,7 +29,7 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 60;
+    static double TRANSMISSION_RATE = 20;
     static int NUM_SENSORS = 100;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
@@ -61,8 +61,10 @@ public class WorkflowTestSimple {
             System.out.println("------------");
             printChildren(fogDevices);
 
+            MetricsExporter exporter = new ConsoleMetricsExporter();
             //Create a controller and the module mapping (all cloud in this case)
-            Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
+            Controller controller = new Controller("master-controller", fogDevices,
+                    sensors, actuators, exporter);
             ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
             ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
@@ -189,7 +191,7 @@ public class WorkflowTestSimple {
     }
 
     private static void createTestTopology(int userID, String appID) {
-        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
+        FogDevice cloud = createFogDevice("cloud", 1000000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
         fogDevices.add(cloud);
         cloud.addParentIdWithLatency(-1, -1);
 
@@ -258,89 +260,6 @@ public class WorkflowTestSimple {
         }
     }
 
-
-//    private static void createTestTopology(int userID, String appID) {
-//        FogDevice cloud = createFogDevice("cloud", 100000, 40000, 10000, 10000, 0, 0.01, 16*103, 16*83.25);
-//        fogDevices.add(cloud);
-//        levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
-//
-//        FogDevice proxy = createFogDevice("proxy", 28000, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
-//        fogDevices.add(proxy);
-//
-//        FogDevice router = createFogDevice("router", 28000, 4000, 100000, 10000, 2, 0.0, 107.339, 83.4333);
-//        fogDevices.add(router);
-//
-//        // Create a cycle with the above devices proxy -> cloud, cloud -> router, router -> proxy
-//        proxy.setParentId(cloud.getId());
-//        cloud.setParentId(router.getId());
-//        router.setParentId(proxy.getId());
-//
-//        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
-//        cloud.setUplinkLatency(2); // latency of connection between cloud and router is 2 ms
-//        router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
-//
-//        // Create sensors  to router device
-//        for (int i = 0; i < NUM_SENSORS; i++) {
-//            String sensorID = "sensor-" + i;
-//            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE", userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-//            sensor.setGatewayDeviceId(router.getId());
-//            sensor.setLatency(1.0);
-//            sensors.add(sensor);
-//        }
-//    }
-
-//    private static void createFogDevices(int userID, String appID) {
-//        // Create the cloud "device"
-//        FogDevice cloud = createFogDevice("cloud", 10000, 40000, 100, 10000, 0, 0.01, 16*103, 16*83.25);
-//        cloud.setParentId(-1);
-//        fogDevices.add(cloud);
-//        levelToDeviceList.put(0, new ArrayList<FogDevice>(){{add(cloud);}});
-//
-//        // Create the proxy server
-//        FogDevice proxy = createFogDevice("proxy-server", 2800, 4000, 100000, 10000, 1, 0.0, 107.339, 83.4333);
-//        proxy.setParentId(cloud.getId());
-//        proxy.setUplinkLatency(20); // latency of connection between proxy server and cloud is 100 ms
-//        fogDevices.add(proxy);
-//        levelToDeviceList.put(1, new ArrayList<FogDevice>(){{add(proxy);}});
-//
-//        // for each area, create a router, a gateway and NUM_OF_SENSORS_PER_AREA sensors
-//        for(int i = 0; i < NUM_OF_AREAS; i++) {
-//            addArea(i, userID, appID, proxy.getId());
-//        }
-//    }
-
-//    private static void addArea(int id, int userID, String appID, int parentId){
-//        FogDevice router = createFogDevice("router-"+id, 2800, 4000, 100000, 10000, 2, 0.0, 107.339, 83.4333);
-//        router.setParentId(parentId);
-//        router.setUplinkLatency(2); // latency of connection between router and proxy server is 2 ms
-//        fogDevices.add(router);
-//        levelToDeviceList.computeIfAbsent(2, k -> new ArrayList<>()).add(router);
-//        // adding a fog device for every Gateway in physical topology
-//        // Each gateway has one or more sensors attached to it
-//        // The parent of each gateway is the proxy server
-//        FogDevice gateway = addSensorGroup(id, appID, userID);
-//        gateway.setParentId(router.getId());
-//        gateway.setUplinkLatency(2); // latency of connection between the gateway and proxy server is 2 ms
-//        fogDevices.add(gateway);
-//
-//    }
-
-//    private static FogDevice addSensorGroup(int groupID, String appID, int userID) {
-//        FogDevice gateway = createFogDevice("gateway-" + groupID, 2800, 4000, 100000, 10000, 3, 0.0, 107.339, 83.4333);
-//        levelToDeviceList.computeIfAbsent(3, k -> new ArrayList<>()).add(gateway);
-//        for (int i = 0; i < NUM_OF_SENSORS_PER_AREA; i++) {
-//            String sensorID = "s-" + groupID + "-" + i;
-//            int tupleGroupID = groupID + 1;
-//            Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE_" + tupleGroupID, userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-//            sensor.setGatewayDeviceId(gateway.getId());
-//            sensor.setLatency(1.0);
-//            sensors.add(sensor);
-//            gatewayToSensorList.computeIfAbsent(gateway.getName(), k -> new ArrayList<>()).add(sensor);
-//        }
-//
-//        return gateway;
-//    }
-
     private static Application createApplication(String appId, int userId){
         Application application = Application.createApplication(appId, userId);
         // Adding modules to the appliction graph
@@ -360,15 +279,15 @@ public class WorkflowTestSimple {
         application.addAppEdge("SENSOR_TUPLE", "source", 1000, 2000, "SENSOR_TUPLE", Tuple.UP, AppEdge.SENSOR);
         application.addAppEdge("source", "senML", 1000, 2000, "SENML_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("senML", "rangeFilter", 1000, 2000, "RANGE_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("rangeFilter", "bloomFilter", 20000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("rangeFilter", "bloomFilter", 1000, 2000, "BLOOM_FILTER_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("bloomFilter", "interpolation", 1000, 2000, "INTERPOLATION_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("interpolation", "join", 1000, 2000, "JOIN_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("join", "annotate", 1000, 2000, "ANNOTATE_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("annotate", "azure", 1000, 2000, "AZURE_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("annotate", "csv", 1000, 2000, "CSV_TUPLE", Tuple.UP, AppEdge.MODULE);
         application.addAppEdge("csv", "mqtt", 1000, 2000, "MQTT_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("mqtt", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
-        application.addAppEdge("azure", "sink", 1000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("mqtt", "sink", 100000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
+        application.addAppEdge("azure", "sink", 100000, 2000, "SINK_TUPLE", Tuple.UP, AppEdge.MODULE);
 
         // Defining the input-output relationships (represented by selectivity) of the application modules.
         application.addTupleMapping("source", "SENSOR_TUPLE", "SENML_TUPLE", new FractionalSelectivity(1.0));

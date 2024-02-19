@@ -12,11 +12,7 @@ import org.fog.entities.Actuator;
 import org.fog.entities.FogDevice;
 import org.fog.entities.Sensor;
 import org.fog.entities.Tuple;
-import org.fog.utils.Config;
-import org.fog.utils.FogEvents;
-import org.fog.utils.FogUtils;
-import org.fog.utils.NetworkUsageMonitor;
-import org.fog.utils.TimeKeeper;
+import org.fog.utils.*;
 
 public class Controller extends SimEntity{
 	
@@ -30,10 +26,15 @@ public class Controller extends SimEntity{
 	private Map<String, Integer> appLaunchDelays;
 
 	private Map<String, ModulePlacement> appModulePlacementPolicy;
+
+	private MetricsExporter metricsExporter;
 	
-	public Controller(String name, List<FogDevice> fogDevices, List<Sensor> sensors, List<Actuator> actuators) {
+	public Controller(String name, List<FogDevice> fogDevices,
+					  List<Sensor> sensors, List<Actuator> actuators,
+					  MetricsExporter metricsExporter) {
 		super(name);
 		this.applications = new HashMap<String, Application>();
+		this.metricsExporter = metricsExporter;
 		setAppLaunchDelays(new HashMap<String, Integer>());
 		setAppModulePlacementPolicy(new HashMap<String, ModulePlacement>());
 		for(FogDevice fogDevice : fogDevices){
@@ -99,135 +100,108 @@ public class Controller extends SimEntity{
 			break;
 		case FogEvents.STOP_SIMULATION:
 			CloudSim.terminateSimulation();
-			printTimeDetails();
-			printPowerDetails();
-			printNetworkUsageDetails();
-			printTotalTuplesSentBySensorDevices();
-			printTotalTuplesProcessedPerAppModule();
-			printThroughputOfEachAppModule();
-			printAvgNumTuplesRecievedPerSec();
-			printAvgNumTuplesSentPerSec();
-			printRemainingEventsInFogDevices();
-			printDeferredQueueSize();
-			printFutureQueueSize();
+			Metrics metrics = new Metrics();
+			setExecutionTime(metrics);
+			setTupleTypeLatencies(metrics);
+			setAppLoopLatencies(metrics);
+			setEnergyConsumptionPerDevice(metrics);
+			setNetworkUsage(metrics);
+			setTotalTuplesSentBySensorDevices(metrics);
+			setTuplesProcessedPerAppModule(metrics);
+//			setThroughputPerAppModule(metrics);
+			setRecordsInPerModule(metrics);
+			setRecordsOutPerModule(metrics);
+			setRemainingEventsPerDevice(metrics);
+			setDeferredQueueSize(metrics);
+			setFutureQueueSize(metrics);
+			metricsExporter.export(metrics);
 			break;
 		}
 	}
 
-	private void printAvgNumTuplesSentPerSec() {
-		System.out.println("AVG NUM TUPLES SENT PER SEC");
+	private void setRecordsOutPerModule(Metrics metrics) {
+		Map<String, Double> recordsOutPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
 			for(AppModule module : app.getModules()){
-				System.out.println("Avg tuples sent by "+module.getName()+" = "+module.getAvgTuplesSentPerSec());
+				recordsOutPerModule.put(module.getName(), module.getAvgTuplesSentPerSec());
 			}
 		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setRecsOutPerModule(recordsOutPerModule);
 	}
 
-	private void printAvgNumTuplesRecievedPerSec() {
-		System.out.println("AVG NUM TUPLES RECIEVED PER SEC");
+	private void setRecordsInPerModule(Metrics metrics) {
+		Map<String, Double> recordsInPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
 			for(AppModule module : app.getModules()){
-				System.out.println("Avg tuples recieved by "+module.getName()+" = "+module.getAvgTuplesRecievedPerSec());
+				recordsInPerModule.put(module.getName(), module.getAvgTuplesRecievedPerSec());
 			}
 		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setRecsInPerModule(recordsInPerModule);
 	}
 
-	private void printThroughputOfEachAppModule() {
-		System.out.println("THROUGHPUT OF EACH APP MODULE");
+	private void setThroughputPerAppModule(Metrics metrics) {
+		Map<String, Double> throughputPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
 			for(AppModule module : app.getModules()){
-				System.out.println("Throughput of "+module.getName()+" = "+ (double) module.getTotalTuplesProcessed()/CloudSim.clock());
+				throughputPerModule.put(module.getName(), (double) module.getTotalTuplesProcessed()/CloudSim.clock());
 			}
 		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setThroughputPerModule(throughputPerModule);
 	}
 
-	private void printRemainingEventsInFogDevices() {
-		System.out.println("REMAINING EVENTS IN FOG DEVICES");
+	private void setRemainingEventsPerDevice(Metrics metrics) {
+		Map<String, Integer> remainingEventsPerDevice = new HashMap<>();
 		for(FogDevice fogDevice : getFogDevices()){
-			System.out.println(fogDevice.getName()+ " : " +fogDevice.getNorthTupleQueue().size());
+			remainingEventsPerDevice.put(fogDevice.getName(), fogDevice.getNorthTupleQueue().size());
 		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setRemainingEventsPerDevice(remainingEventsPerDevice);
 	}
 
-	private void printDeferredQueueSize() {
-		System.out.print("DEFERRED QUEUE SIZE : ");
-		System.out.println(CloudSim.getDeferredSize());
-		System.out.println("---------------------------------------------");
-		System.out.println();
+	private void setDeferredQueueSize(Metrics metrics) {
+		metrics.setDeferredQueueSize(CloudSim.getDeferredSize());
 	}
 
-	private void printFutureQueueSize() {
-		System.out.println("UNEXECUTED EVENTS :");
-		FutureQueue futureQueue = CloudSim.getFutureQueue();
-		Iterator<SimEvent> it = futureQueue.iterator();
-		PredicateType predicate = new PredicateType(FogEvents.TUPLE_ARRIVAL);
-		while(it.hasNext()){
-			SimEvent event = it.next();
-			if (predicate.match(event)) {
-				Tuple tuple = (Tuple) event.getData();
-				System.out.println(CloudSim.clock()+": "+tuple.getCloudletId() + " | Source : "+tuple.getSrcModuleName()+" | Dest : "+tuple.getDestModuleName());
-			}
-		}
+	private void setFutureQueueSize(Metrics metrics) {
+		metrics.setFutureQueueSize(CloudSim.getFutureQueue().size());
 	}
 
-//	private void printTotalTuplesArrivedAtFogDevices() {
-//		System.out.println("TUPLES ARRIVED AT FOG DEVICES");
-//		for(FogDevice fogDevice : getFogDevices()){
-//			System.out.println("Total tuples arrived at "+fogDevice.getName()+" = "+fogDevice.getTotalTuplesArrived());
+//	private void printFutureQueueSize() {
+//		System.out.println("UNEXECUTED EVENTS :");
+//		FutureQueue futureQueue = CloudSim.getFutureQueue();
+//		Iterator<SimEvent> it = futureQueue.iterator();
+//		PredicateType predicate = new PredicateType(FogEvents.TUPLE_ARRIVAL);
+//		while(it.hasNext()){
+//			SimEvent event = it.next();
+//			if (predicate.match(event)) {
+//				Tuple tuple = (Tuple) event.getData();
+//				System.out.println(CloudSim.clock()+": "+tuple.getCloudletId() + " | Source : "+tuple.getSrcModuleName()+" | Dest : "+tuple.getDestModuleName());
+//			}
 //		}
-//		System.out.println("---------------------------------------------");
-//		System.out.println();
 //	}
 
-	private void printTotalTuplesProcessedPerAppModule() {
-		System.out.println("TUPLES PROCESSED PER APP MODULE");
+	private void setTuplesProcessedPerAppModule(Metrics metrics) {
+		Map<String, Integer> tuplesProcessedPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
 			for(AppModule module : app.getModules()){
-				System.out.println("Total tuples processed by "+module.getName()+" = "+module.getTotalTuplesProcessed());
+				tuplesProcessedPerModule.put(module.getName(), module.getTotalTuplesProcessed());
 			}
 		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setTuplesProcessedPerModule(tuplesProcessedPerModule);
 	}
 
-	private void printTuplesSentByEachSensorDevice() {
-		System.out.println("TUPLES SENT BY EACH SENSOR DEVICE");
-		for(Sensor sensor : sensors){
-			System.out.println("Total tuples sent by "
-					+ sensor.getName()
-					+ " = "
-					+ sensor.getTotalTuplesSent()
-					+ " for tuples of type = "
-					+ sensor.getTupleType());
-		}
-		System.out.println("---------------------------------------------");
-		System.out.println();
-	}
-
-	private void printTotalTuplesSentBySensorDevices() {
-		System.out.println("TOTAL TUPLES SENT BY ALL SENSORS");
+	private void setTotalTuplesSentBySensorDevices(Metrics metrics) {
 		int sumTuples = sensors.stream()
 				.mapToInt(Sensor::getTotalTuplesSent)
 				.sum();
-		System.out.println("Total tuples sent by all sensors = "+sumTuples);
-		System.out.println("---------------------------------------------");
-		System.out.println();
+		metrics.setTuplesSentBySensors(sumTuples);
 	}
 
-	private void printNetworkUsageDetails() {
-		System.out.println("Total network usage = " + NetworkUsageMonitor.getNetworkUsage() / Config.MAX_SIMULATION_TIME);
-		System.out.println();
+	private void setNetworkUsage(Metrics metrics) {
+		metrics.setNetworkUsage(NetworkUsageMonitor.getNetworkUsage() / Config.MAX_SIMULATION_TIME);
 	}
 
 	private FogDevice getCloud(){
@@ -236,16 +210,17 @@ public class Controller extends SimEntity{
 				return dev;
 		return null;
 	}
-	
-	private void printCostDetails(){
-		System.out.println("Cost of execution in cloud = " + getCloud().getTotalCost());
-	}
-	
-	private void printPowerDetails() {
+
+
+	private void setEnergyConsumptionPerDevice(Metrics metrics) {
+		Map<String, Double> energyConsumptionPerDevice = new HashMap<>();
 		for(FogDevice fogDevice : getFogDevices()){
-			System.out.println(fogDevice.getName() + " : Energy Consumed = "+fogDevice.getEnergyConsumption());
+			energyConsumptionPerDevice.put(fogDevice.getName(), fogDevice.getEnergyConsumption());
 		}
+		metrics.setEnergyConsumptionPerDevice(energyConsumptionPerDevice);
 	}
+
+
 
 	private String getStringForLoopId(int loopId){
 		for(String appId : getApplications().keySet()){
@@ -258,26 +233,24 @@ public class Controller extends SimEntity{
 		return null;
 	}
 
-	private void printTimeDetails() {
-		System.out.println("=========================================");
-		System.out.println("============== RESULTS ==================");
-		System.out.println("=========================================");
-		System.out.println("EXECUTION TIME : "+ (Calendar.getInstance().getTimeInMillis() - TimeKeeper.getInstance().getSimulationStartTime()));
-		System.out.println("=========================================");
-		System.out.println("APPLICATION LOOP DELAYS");
-		System.out.println("=========================================");
-		for(Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()){
-			System.out.println(getStringForLoopId(loopId) + " ---> "+TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
-		}
-		System.out.println("=========================================");
-		System.out.println("TUPLE CPU EXECUTION DELAY");
-		System.out.println("=========================================");
-		
+	private void setExecutionTime(Metrics metrics) {
+		metrics.setExecutionTime(Calendar.getInstance().getTimeInMillis() - TimeKeeper.getInstance().getSimulationStartTime());
+	}
+
+	private void setTupleTypeLatencies(Metrics metrics) {
+		Map<String, Double> tupleTypeLatencies = new HashMap<>();
 		for(String tupleType : TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().keySet()){
-			System.out.println(tupleType + " ---> "+TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().get(tupleType));
+			tupleTypeLatencies.put(tupleType, TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().get(tupleType));
 		}
-		
-		System.out.println("=========================================");
+		metrics.setLatencyPerTupleType(tupleTypeLatencies);
+	}
+
+	private void setAppLoopLatencies(Metrics metrics) {
+		Map<String, Double> appLoopLatencies = new HashMap<>();
+		for(Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()){
+			appLoopLatencies.put(getStringForLoopId(loopId), TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
+		}
+		metrics.setLatencyPerAppLoop(appLoopLatencies);
 	}
 
 	protected void manageResources(){

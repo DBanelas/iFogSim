@@ -21,10 +21,7 @@ import org.fog.entities.Tuple;
 import org.fog.placement.*;
 import org.fog.policy.AppModuleAllocationPolicy;
 import org.fog.scheduler.StreamOperatorScheduler;
-import org.fog.utils.FogLinearPowerModel;
-import org.fog.utils.FogUtils;
-import org.fog.utils.Logger;
-import org.fog.utils.TimeKeeper;
+import org.fog.utils.*;
 import org.fog.utils.distribution.DeterministicDistribution;
 
 public class WorkflowTestComplex {
@@ -52,8 +49,11 @@ public class WorkflowTestComplex {
         // Create the physical topology
         createFogDevices(USER_ID, APP_ID);
 
+        MetricsExporter exporter = new ConsoleMetricsExporter();
+
         //Create a controller and the module mapping (all cloud in this case)
-        Controller controller = new Controller("master-controller", fogDevices, sensors, actuators);
+        Controller controller = new Controller("master-controller", fogDevices,
+                sensors, actuators, exporter);
         ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
         ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 

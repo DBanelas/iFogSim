@@ -16,7 +16,9 @@ import org.fog.entities.Tuple;
 import org.fog.placement.Controller;
 import org.fog.placement.ModuleMapping;
 import org.fog.placement.ModulePlacementEdgewards;
+import org.fog.utils.ConsoleMetricsExporter;
 import org.fog.utils.JsonToTopology;
+import org.fog.utils.MetricsExporter;
 
 /**
  * Simulation setup for EEG Beam Tractor Game extracting physical topology 
@@ -48,9 +50,11 @@ public class CleanFromJson {
 			 * Creating the physical topology from specified JSON file
 			 */
 			PhysicalTopology physicalTopology = JsonToTopology.getPhysicalTopology(broker.getId(), appId, "/home/dbanelas/Desktop/CREXDATA/workflow-test-generator/fog-network-generator/topology.json");
-						
+
+
+			MetricsExporter exporter = new ConsoleMetricsExporter();
 			Controller controller = new Controller("master-controller", physicalTopology.getFogDevices(), physicalTopology.getSensors(), 
-					physicalTopology.getActuators());
+					physicalTopology.getActuators(), exporter);
 			
 			controller.submitApplication(application, 0, new ModulePlacementEdgewards(physicalTopology.getFogDevices(), 
 					physicalTopology.getSensors(), physicalTopology.getActuators(), 
