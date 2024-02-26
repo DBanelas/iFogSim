@@ -54,7 +54,7 @@ public class CleanFromJson {
 
 			MetricsExporter exporter = new ConsoleMetricsExporter();
 			Controller controller = new Controller("master-controller", physicalTopology.getFogDevices(), physicalTopology.getSensors(), 
-					physicalTopology.getActuators(), exporter);
+					physicalTopology.getActuators());
 			
 			controller.submitApplication(application, 0, new ModulePlacementEdgewards(physicalTopology.getFogDevices(), 
 					physicalTopology.getSensors(), physicalTopology.getActuators(), 

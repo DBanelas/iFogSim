@@ -2,6 +2,10 @@ package org.fog.utils;
 import java.util.Map;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.JsonNode;
+
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -111,4 +115,33 @@ public class Metrics {
      * Value: Device name
      */
     Map<String, String> placement;
+
+    public String getJsonString() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        ObjectNode rootNode = objectMapper.createObjectNode();
+        JsonNode latencyPerAppLoop = objectMapper.valueToTree(this.latencyPerAppLoop);
+        JsonNode latencyPerTupleType = objectMapper.valueToTree(this.latencyPerTupleType);
+        JsonNode energyConsumptionPerDevice = objectMapper.valueToTree(this.energyConsumptionPerDevice);
+        JsonNode tuplesProcessedPerModule = objectMapper.valueToTree(this.tuplesProcessedPerModule);
+        JsonNode throughputPerModule = objectMapper.valueToTree(this.throughputPerModule);
+        JsonNode recsInPerModule = objectMapper.valueToTree(this.recsInPerModule);
+        JsonNode recsOutPerModule = objectMapper.valueToTree(this.recsOutPerModule);
+        JsonNode remainingEventsPerDevice = objectMapper.valueToTree(this.remainingEventsPerDevice);
+        JsonNode placement = objectMapper.valueToTree(this.placement);
+        rootNode.set("placement", placement);
+        rootNode.set("latencyPerAppLoop", latencyPerAppLoop);
+        rootNode.set("latencyPerTupleType", latencyPerTupleType);
+        rootNode.set("energyConsumptionPerDevice", energyConsumptionPerDevice);
+        rootNode.set("tuplesProcessedPerModule", tuplesProcessedPerModule);
+        rootNode.set("throughputPerModule", throughputPerModule);
+        rootNode.set("recsInPerModule", recsInPerModule);
+        rootNode.set("recsOutPerModule", recsOutPerModule);
+        rootNode.set("remainingEventsPerDevice", remainingEventsPerDevice);
+        rootNode.put("executionTime", executionTime);
+        rootNode.put("networkUsage", networkUsage);
+        rootNode.put("tuplesSentBySensors", tuplesSentBySensors);
+        rootNode.put("futureQueueSize", futureQueueSize);
+        rootNode.put("deferredQueueSize", deferredQueueSize);
+        return rootNode.toPrettyString();
+    }
 }

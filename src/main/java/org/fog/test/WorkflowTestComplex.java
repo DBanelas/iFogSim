@@ -53,7 +53,7 @@ public class WorkflowTestComplex {
 
         //Create a controller and the module mapping (all cloud in this case)
         Controller controller = new Controller("master-controller", fogDevices,
-                sensors, actuators, exporter);
+                sensors, actuators);
         ModuleMapping moduleMapping = createAllCloudModuleMapping(application);
         ModulePlacement placement = new ModulePlacementMapping(fogDevices, application, moduleMapping);
 
@@ -66,6 +66,9 @@ public class WorkflowTestComplex {
         TimeKeeper.getInstance().setSimulationStartTime(Calendar.getInstance().getTimeInMillis());
         CloudSim.startSimulation();
         CloudSim.stopSimulation();
+        Metrics metrics = controller.getMetrics();
+        exporter.export(metrics);
+
     }
 
     private static void initializeSimulation(boolean enableiFogSimLogger,

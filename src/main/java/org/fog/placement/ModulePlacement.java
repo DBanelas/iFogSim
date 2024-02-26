@@ -8,6 +8,7 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.fog.application.AppModule;
 import org.fog.application.Application;
 import org.fog.entities.FogDevice;
+import org.fog.utils.Logger;
 
 public abstract class ModulePlacement {
 
@@ -52,7 +53,7 @@ public abstract class ModulePlacement {
 			module = _module;
 
 		if(canBeCreated(device, module)){
-			System.out.println("Creating "+module.getName()+" on device "+device.getName());
+			Logger.debug("ModulePlacement", "Creating "+module.getName()+" on device "+device.getName());
 
 			if(!getDeviceToModuleMap().containsKey(device.getId()))
 				getDeviceToModuleMap().put(device.getId(), new ArrayList<AppModule>());

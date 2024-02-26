@@ -26,15 +26,12 @@ public class Controller extends SimEntity{
 	private Map<String, Integer> appLaunchDelays;
 
 	private Map<String, ModulePlacement> appModulePlacementPolicy;
-
-	private MetricsExporter metricsExporter;
+	private Metrics metrics;
 	
 	public Controller(String name, List<FogDevice> fogDevices,
-					  List<Sensor> sensors, List<Actuator> actuators,
-					  MetricsExporter metricsExporter) {
+					  List<Sensor> sensors, List<Actuator> actuators) {
 		super(name);
 		this.applications = new HashMap<String, Application>();
-		this.metricsExporter = metricsExporter;
 		setAppLaunchDelays(new HashMap<String, Integer>());
 		setAppModulePlacementPolicy(new HashMap<String, ModulePlacement>());
 		for(FogDevice fogDevice : fogDevices){
@@ -44,6 +41,11 @@ public class Controller extends SimEntity{
 		setActuators(actuators);
 		setSensors(sensors);
 		connectWithLatencies();
+		this.metrics = new Metrics();
+	}
+
+	public Metrics getMetrics() {
+		return metrics;
 	}
 
 	private FogDevice getFogDeviceById(int id){
@@ -100,27 +102,25 @@ public class Controller extends SimEntity{
 			break;
 		case FogEvents.STOP_SIMULATION:
 			CloudSim.terminateSimulation();
-			Metrics metrics = new Metrics();
-			setPlacement(metrics);
-			setExecutionTime(metrics);
-			setTupleTypeLatencies(metrics);
-			setAppLoopLatencies(metrics);
-			setEnergyConsumptionPerDevice(metrics);
-			setNetworkUsage(metrics);
-			setTotalTuplesSentBySensorDevices(metrics);
-			setTuplesProcessedPerAppModule(metrics);
+			setPlacement();
+			setExecutionTime();
+			setTupleTypeLatencies();
+			setAppLoopLatencies();
+			setEnergyConsumptionPerDevice();
+			setNetworkUsage();
+			setTotalTuplesSentBySensorDevices();
+			setTuplesProcessedPerAppModule();
 //			setThroughputPerAppModule(metrics);
-			setRecordsInPerModule(metrics);
-			setRecordsOutPerModule(metrics);
-			setRemainingEventsPerDevice(metrics);
-			setDeferredQueueSize(metrics);
-			setFutureQueueSize(metrics);
-			metricsExporter.export(metrics);
+			setRecordsInPerModule();
+			setRecordsOutPerModule();
+			setRemainingEventsPerDevice();
+			setDeferredQueueSize();
+			setFutureQueueSize();
 			break;
 		}
 	}
 
-	private void setPlacement(Metrics metrics) {
+	private void setPlacement() {
 		Map<String, String> placement = new HashMap<>();
 		String appID = "";
 		for (String id : getApplications().keySet()) appID = id;
@@ -135,7 +135,7 @@ public class Controller extends SimEntity{
 		metrics.setPlacement(placement);
 	}
 
-	private void setRecordsOutPerModule(Metrics metrics) {
+	private void setRecordsOutPerModule() {
 		Map<String, Double> recordsOutPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
@@ -146,7 +146,7 @@ public class Controller extends SimEntity{
 		metrics.setRecsOutPerModule(recordsOutPerModule);
 	}
 
-	private void setRecordsInPerModule(Metrics metrics) {
+	private void setRecordsInPerModule() {
 		Map<String, Double> recordsInPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
@@ -157,7 +157,7 @@ public class Controller extends SimEntity{
 		metrics.setRecsInPerModule(recordsInPerModule);
 	}
 
-	private void setThroughputPerAppModule(Metrics metrics) {
+	private void setThroughputPerAppModule() {
 		Map<String, Double> throughputPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
@@ -168,7 +168,7 @@ public class Controller extends SimEntity{
 		metrics.setThroughputPerModule(throughputPerModule);
 	}
 
-	private void setRemainingEventsPerDevice(Metrics metrics) {
+	private void setRemainingEventsPerDevice() {
 		Map<String, Integer> remainingEventsPerDevice = new HashMap<>();
 		for(FogDevice fogDevice : getFogDevices()){
 			remainingEventsPerDevice.put(fogDevice.getName(), fogDevice.getNorthTupleQueue().size());
@@ -176,11 +176,11 @@ public class Controller extends SimEntity{
 		metrics.setRemainingEventsPerDevice(remainingEventsPerDevice);
 	}
 
-	private void setDeferredQueueSize(Metrics metrics) {
+	private void setDeferredQueueSize() {
 		metrics.setDeferredQueueSize(CloudSim.getDeferredSize());
 	}
 
-	private void setFutureQueueSize(Metrics metrics) {
+	private void setFutureQueueSize() {
 		metrics.setFutureQueueSize(CloudSim.getFutureQueue().size());
 	}
 
@@ -198,7 +198,7 @@ public class Controller extends SimEntity{
 //		}
 //	}
 
-	private void setTuplesProcessedPerAppModule(Metrics metrics) {
+	private void setTuplesProcessedPerAppModule() {
 		Map<String, Integer> tuplesProcessedPerModule = new HashMap<>();
 		for(String appId : getApplications().keySet()){
 			Application app = getApplications().get(appId);
@@ -209,14 +209,14 @@ public class Controller extends SimEntity{
 		metrics.setTuplesProcessedPerModule(tuplesProcessedPerModule);
 	}
 
-	private void setTotalTuplesSentBySensorDevices(Metrics metrics) {
+	private void setTotalTuplesSentBySensorDevices() {
 		int sumTuples = sensors.stream()
 				.mapToInt(Sensor::getTotalTuplesSent)
 				.sum();
 		metrics.setTuplesSentBySensors(sumTuples);
 	}
 
-	private void setNetworkUsage(Metrics metrics) {
+	private void setNetworkUsage() {
 		metrics.setNetworkUsage(NetworkUsageMonitor.getNetworkUsage() / Config.MAX_SIMULATION_TIME);
 	}
 
@@ -228,15 +228,13 @@ public class Controller extends SimEntity{
 	}
 
 
-	private void setEnergyConsumptionPerDevice(Metrics metrics) {
+	private void setEnergyConsumptionPerDevice() {
 		Map<String, Double> energyConsumptionPerDevice = new HashMap<>();
 		for(FogDevice fogDevice : getFogDevices()){
 			energyConsumptionPerDevice.put(fogDevice.getName(), fogDevice.getEnergyConsumption());
 		}
 		metrics.setEnergyConsumptionPerDevice(energyConsumptionPerDevice);
 	}
-
-
 
 	private String getStringForLoopId(int loopId){
 		for(String appId : getApplications().keySet()){
@@ -249,11 +247,11 @@ public class Controller extends SimEntity{
 		return null;
 	}
 
-	private void setExecutionTime(Metrics metrics) {
+	private void setExecutionTime() {
 		metrics.setExecutionTime(Calendar.getInstance().getTimeInMillis() - TimeKeeper.getInstance().getSimulationStartTime());
 	}
 
-	private void setTupleTypeLatencies(Metrics metrics) {
+	private void setTupleTypeLatencies() {
 		Map<String, Double> tupleTypeLatencies = new HashMap<>();
 		for(String tupleType : TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().keySet()){
 			tupleTypeLatencies.put(tupleType, TimeKeeper.getInstance().getTupleTypeToAverageCpuTime().get(tupleType));
@@ -261,7 +259,7 @@ public class Controller extends SimEntity{
 		metrics.setLatencyPerTupleType(tupleTypeLatencies);
 	}
 
-	private void setAppLoopLatencies(Metrics metrics) {
+	private void setAppLoopLatencies() {
 		Map<String, Double> appLoopLatencies = new HashMap<>();
 		for(Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()){
 			appLoopLatencies.put(getStringForLoopId(loopId), TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
