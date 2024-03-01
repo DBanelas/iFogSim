@@ -6,13 +6,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.fasterxml.jackson.databind.JsonNode;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-@Getter
-@Setter
-@NoArgsConstructor
 public class Metrics {
     /**
      * Execution time of the simulation
@@ -98,14 +91,126 @@ public class Metrics {
      */
     Map<String, Double> recsOutPerModule;
 
+    public double getExecutionTime() {
+        return executionTime;
+    }
+
+    public void setExecutionTime(double executionTime) {
+        this.executionTime = executionTime;
+    }
+
+    public double getNetworkUsage() {
+        return networkUsage;
+    }
+
+    public void setNetworkUsage(double networkUsage) {
+        this.networkUsage = networkUsage;
+    }
+
+    public int getTuplesSentBySensors() {
+        return tuplesSentBySensors;
+    }
+
+    public void setTuplesSentBySensors(int tuplesSentBySensors) {
+        this.tuplesSentBySensors = tuplesSentBySensors;
+    }
+
+    public int getFutureQueueSize() {
+        return futureQueueSize;
+    }
+
+    public void setFutureQueueSize(int futureQueueSize) {
+        this.futureQueueSize = futureQueueSize;
+    }
+
+    public int getDeferredQueueSize() {
+        return deferredQueueSize;
+    }
+
+    public void setDeferredQueueSize(int deferredQueueSize) {
+        this.deferredQueueSize = deferredQueueSize;
+    }
+
+    public Map<String, Double> getLatencyPerAppLoop() {
+        return latencyPerAppLoop;
+    }
+
+    public void setLatencyPerAppLoop(Map<String, Double> latencyPerAppLoop) {
+        this.latencyPerAppLoop = latencyPerAppLoop;
+    }
+
+    public Map<String, Double> getLatencyPerTupleType() {
+        return latencyPerTupleType;
+    }
+
+    public void setLatencyPerTupleType(Map<String, Double> latencyPerTupleType) {
+        this.latencyPerTupleType = latencyPerTupleType;
+    }
+
+    public Map<String, Double> getEnergyConsumptionPerDevice() {
+        return energyConsumptionPerDevice;
+    }
+
+    public void setEnergyConsumptionPerDevice(Map<String, Double> energyConsumptionPerDevice) {
+        this.energyConsumptionPerDevice = energyConsumptionPerDevice;
+    }
+
+    public Map<String, Integer> getTuplesProcessedPerModule() {
+        return tuplesProcessedPerModule;
+    }
+
+    public void setTuplesProcessedPerModule(Map<String, Integer> tuplesProcessedPerModule) {
+        this.tuplesProcessedPerModule = tuplesProcessedPerModule;
+    }
+
+    public Map<String, Double> getThroughputPerModule() {
+        return throughputPerModule;
+    }
+
+    public void setThroughputPerModule(Map<String, Double> throughputPerModule) {
+        this.throughputPerModule = throughputPerModule;
+    }
+
+    public Map<String, Double> getRecsInPerModule() {
+        return recsInPerModule;
+    }
+
+    public void setRecsInPerModule(Map<String, Double> recsInPerModule) {
+        this.recsInPerModule = recsInPerModule;
+    }
+
+    public Map<String, Double> getRecsOutPerModule() {
+        return recsOutPerModule;
+    }
+
+    public void setRecsOutPerModule(Map<String, Double> recsOutPerModule) {
+        this.recsOutPerModule = recsOutPerModule;
+    }
+
+    public Map<String, Long> getRemainingDataPerOperator() {
+        return remainingDataPerOperator;
+    }
+
+    public void setRemainingDataPerOperator(Map<String, Long> remainingDataPerOperator) {
+        this.remainingDataPerOperator = remainingDataPerOperator;
+    }
+
+    public Map<String, String> getPlacement() {
+        return placement;
+    }
+
+    public void setPlacement(Map<String, String> placement) {
+        this.placement = placement;
+    }
+
     /**
-     * Remaining events per device
+     * Remaining events per operator
      * <br>
-     * Key: Device name
+     * Key: Operator name
      * <br>
      * Value: Remaining events
      */
-    Map<String, Integer> remainingEventsPerDevice;
+    Map<String, Long> remainingDataPerOperator;
 
     /**
      * Placement of modules
@@ -126,7 +231,7 @@ public class Metrics {
         JsonNode throughputPerModule = objectMapper.valueToTree(this.throughputPerModule);
         JsonNode recsInPerModule = objectMapper.valueToTree(this.recsInPerModule);
         JsonNode recsOutPerModule = objectMapper.valueToTree(this.recsOutPerModule);
-        JsonNode remainingEventsPerDevice = objectMapper.valueToTree(this.remainingEventsPerDevice);
+        JsonNode remainingDataPerOperator = objectMapper.valueToTree(this.remainingDataPerOperator);
         JsonNode placement = objectMapper.valueToTree(this.placement);
         rootNode.set("placement", placement);
         rootNode.set("latencyPerAppLoop", latencyPerAppLoop);
@@ -136,7 +241,7 @@ public class Metrics {
         rootNode.set("throughputPerModule", throughputPerModule);
         rootNode.set("recsInPerModule", recsInPerModule);
         rootNode.set("recsOutPerModule", recsOutPerModule);
-        rootNode.set("remainingEventsPerDevice", remainingEventsPerDevice);
+        rootNode.set("remainingEventsPerDevice", remainingDataPerOperator);
         rootNode.put("executionTime", executionTime);
         rootNode.put("networkUsage", networkUsage);
         rootNode.put("tuplesSentBySensors", tuplesSentBySensors);

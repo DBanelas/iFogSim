@@ -21,7 +21,7 @@ public class ConsoleMetricsExporter implements MetricsExporter {
 //        JsonNode throughputPerModule = objectMapper.valueToTree(metrics.getThroughputPerModule());
         JsonNode recsInPerModule = objectMapper.valueToTree(metrics.getRecsInPerModule());
         JsonNode recsOutPerModule = objectMapper.valueToTree(metrics.getRecsOutPerModule());
-        JsonNode remainingEventsPerDevice = objectMapper.valueToTree(metrics.getRemainingEventsPerDevice());
+        JsonNode remainingDataPerOperator = objectMapper.valueToTree(metrics.getRemainingDataPerOperator());
         JsonNode placement = objectMapper.valueToTree(metrics.getPlacement());
         objectNode.set("placement", placement);
         objectNode.set("latencyPerAppLoop", latencyPerAppLoop);
@@ -31,7 +31,7 @@ public class ConsoleMetricsExporter implements MetricsExporter {
 //        objectNode.set("throughputPerModule", throughputPerModule);
         objectNode.set("recsInPerModule", recsInPerModule);
         objectNode.set("recsOutPerModule", recsOutPerModule);
-        objectNode.set("remainingEventsPerDevice", remainingEventsPerDevice);
+        objectNode.set("remainingEventsPerOperator", remainingDataPerOperator);
         System.out.println(objectNode.toPrettyString());
     }
 

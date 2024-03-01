@@ -2,6 +2,7 @@ package org.fog.placement;
 
 import java.util.*;
 
+import org.apache.commons.math3.util.Pair;
 import org.cloudbus.cloudsim.core.*;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
 import org.fog.application.AppEdge;
@@ -26,7 +27,7 @@ public class Controller extends SimEntity{
 	private Map<String, Integer> appLaunchDelays;
 
 	private Map<String, ModulePlacement> appModulePlacementPolicy;
-	private Metrics metrics;
+	private final Metrics metrics;
 	
 	public Controller(String name, List<FogDevice> fogDevices,
 					  List<Sensor> sensors, List<Actuator> actuators) {
@@ -110,12 +111,9 @@ public class Controller extends SimEntity{
 			setNetworkUsage();
 			setTotalTuplesSentBySensorDevices();
 			setTuplesProcessedPerAppModule();
-//			setThroughputPerAppModule(metrics);
 			setRecordsInPerModule();
 			setRecordsOutPerModule();
-			setRemainingEventsPerDevice();
-			setDeferredQueueSize();
-			setFutureQueueSize();
+			setUnexecutedEventsForEachOperator();
 			break;
 		}
 	}
@@ -168,35 +166,59 @@ public class Controller extends SimEntity{
 		metrics.setThroughputPerModule(throughputPerModule);
 	}
 
-	private void setRemainingEventsPerDevice() {
-		Map<String, Integer> remainingEventsPerDevice = new HashMap<>();
-		for(FogDevice fogDevice : getFogDevices()){
-			remainingEventsPerDevice.put(fogDevice.getName(), fogDevice.getNorthTupleQueue().size());
+	private void setUnexecutedEventsForEachOperator() {
+		HashMap<String, Long> unexecutedEvents = new HashMap<>();
+		for (String appID : getApplications().keySet()) {
+			Application app = getApplications().get(appID);
+			for (AppModule module : app.getModules()) {
+				unexecutedEvents.put(module.getName(), 0L);
+			}
 		}
-		metrics.setRemainingEventsPerDevice(remainingEventsPerDevice);
+		getFutureQueueEvents(unexecutedEvents);
+		getNorthTupleQueueEvents(unexecutedEvents);
+		getSouthTupleQueueEvents(unexecutedEvents);
+		metrics.setRemainingDataPerOperator(unexecutedEvents);
 	}
 
-	private void setDeferredQueueSize() {
-		metrics.setDeferredQueueSize(CloudSim.getDeferredSize());
+	private void getNorthTupleQueueEvents(HashMap<String, Long> unexecutedEvents) {
+		for(FogDevice fogDevice : getFogDevices()){
+			Queue<Pair<Tuple, Integer>> northQueue = fogDevice.getNorthTupleQueue();
+			for(Pair<Tuple, Integer> pair : northQueue){
+				Tuple tuple = pair.getFirst();
+				String moduleName = tuple.getSrcModuleName();
+				long dataSize = tuple.getCloudletFileSize();
+				unexecutedEvents.put(moduleName, unexecutedEvents.get(moduleName) + dataSize);
+			}
+		}
 	}
 
-	private void setFutureQueueSize() {
-		metrics.setFutureQueueSize(CloudSim.getFutureQueue().size());
+	private void getSouthTupleQueueEvents(HashMap<String, Long> unexecutedEvents) {
+		for(FogDevice fogDevice : getFogDevices()){
+			Queue<Pair<Tuple, Integer>> southQueue = fogDevice.getSouthTupleQueue();
+			for(Pair<Tuple, Integer> pair : southQueue){
+				Tuple tuple = pair.getFirst();
+				String moduleName = tuple.getSrcModuleName();
+				long dataSize = tuple.getCloudletFileSize();
+				unexecutedEvents.put(moduleName, unexecutedEvents.get(moduleName) + dataSize);
+			}
+		}
 	}
 
-//	private void printFutureQueueSize() {
-//		System.out.println("UNEXECUTED EVENTS :");
-//		FutureQueue futureQueue = CloudSim.getFutureQueue();
-//		Iterator<SimEvent> it = futureQueue.iterator();
-//		PredicateType predicate = new PredicateType(FogEvents.TUPLE_ARRIVAL);
-//		while(it.hasNext()){
-//			SimEvent event = it.next();
-//			if (predicate.match(event)) {
-//				Tuple tuple = (Tuple) event.getData();
-//				System.out.println(CloudSim.clock()+": "+tuple.getCloudletId() + " | Source : "+tuple.getSrcModuleName()+" | Dest : "+tuple.getDestModuleName());
-//			}
-//		}
-//	}
+	private void getFutureQueueEvents(HashMap<String, Long> unexecutedEvents) {
+		FutureQueue futureQueue = CloudSim.getFutureQueue();
+		Iterator<SimEvent> it = futureQueue.iterator();
+		PredicateType predicate = new PredicateType(FogEvents.TUPLE_ARRIVAL);
+		while(it.hasNext()){
+			SimEvent event = it.next();
+			if (predicate.match(event)) {
+				Tuple tuple = (Tuple) event.getData();
+				String moduleName = tuple.getSrcModuleName();
+				long dataSize = tuple.getCloudletFileSize();
+				if (moduleName.contains("sensor")) continue;
+				unexecutedEvents.put(moduleName, unexecutedEvents.get(moduleName) + dataSize);
+			}
+		}
+	}
 
 	private void setTuplesProcessedPerAppModule() {
 		Map<String, Integer> tuplesProcessedPerModule = new HashMap<>();

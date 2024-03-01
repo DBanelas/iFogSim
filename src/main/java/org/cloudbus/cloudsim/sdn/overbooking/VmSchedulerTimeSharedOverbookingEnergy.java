@@ -36,7 +36,7 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 	@Override
 	protected void setAvailableMips(double availableMips) {
 		super.setAvailableMips(availableMips);
-		addUtilizationEntry();		
+//		addUtilizationEntry();
 	}
 	
 	private List<PowerUtilizationHistoryEntry> utilizationHistories = null;

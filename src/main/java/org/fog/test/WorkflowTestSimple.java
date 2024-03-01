@@ -29,13 +29,13 @@ public class WorkflowTestSimple {
     static List<FogDevice> fogDevices = new ArrayList<>();
     static List<Sensor> sensors = new ArrayList<>();
     static List<Actuator> actuators = new ArrayList<>();
-    static double TRANSMISSION_RATE = 60;
-    static int NUM_SENSORS = 100;
+    static double TRANSMISSION_RATE = 1;
+    static int NUM_SENSORS = 70;
     static int NUM_USERS = 1;
     static boolean TRACE_FLAG = false;
 
     public static void main(String[] args) {
-        Config.setMaxSimulationTime(1000);
+        Config.setMaxSimulationTime(5000);
         Log.printLine("Starting WorkflowTest...");
         Logger.ENABLED = true;
 
@@ -103,7 +103,20 @@ public class WorkflowTestSimple {
         ModuleMapping moduleMapping = ModuleMapping.createModuleMapping();
 
         // Iterate over all module names in the application
-        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
+//        app.getModuleNames().forEach(moduleName -> moduleMapping.addModuleToDevice(moduleName, "cloud"));
+        moduleMapping.addModuleToDevice("source", "edge-server");
+        moduleMapping.addModuleToDevice("senML", "edge-server");
+        moduleMapping.addModuleToDevice("rangeFilter", "proxy-server");
+        moduleMapping.addModuleToDevice("bloomFilter", "proxy-server");
+        moduleMapping.addModuleToDevice("interpolation", "cloud");
+        moduleMapping.addModuleToDevice("join", "cloud");
+        moduleMapping.addModuleToDevice("annotate", "cloud");
+        moduleMapping.addModuleToDevice("azure", "cloud");
+        moduleMapping.addModuleToDevice("csv", "cloud");
+        moduleMapping.addModuleToDevice("mqtt", "cloud");
+        moduleMapping.addModuleToDevice("sink", "cloud");
+
+
 
         // Return the populated ModuleMapping instance
         return moduleMapping;
@@ -198,6 +211,14 @@ public class WorkflowTestSimple {
         fogDevices.add(cloud);
         cloud.addParentIdWithLatency(-1, -1);
 
+        FogDevice proxy = createFogDevice("proxy-server", 1000000, 40000, 100000, 10000, 1, 0.01, 16*103, 16*83.25);
+        fogDevices.add(proxy);
+        proxy.addParentIdWithLatency(cloud.getId(), 2.0);
+
+        FogDevice edge = createFogDevice("edge-server", 1000000, 40000, 1000000, 10000, 2, 0.01, 16*103, 16*83.25);
+        fogDevices.add(edge);
+        edge.addParentIdWithLatency(proxy.getId(), 2.0);
+
 //        FogDevice sinkDevice = createFogDevice("SinkDevice", 100000, 40000, 100000, 100000, 0, 0.01, 16*103, 16*83.25);
 //        fogDevices.add(sinkDevice);
 //
@@ -257,7 +278,7 @@ public class WorkflowTestSimple {
         for (int i = 0; i < NUM_SENSORS; i++) {
             String sensorID = "sensor-" + i;
             Sensor sensor = new Sensor(sensorID, "SENSOR_TUPLE", userID, appID, new DeterministicDistribution(TRANSMISSION_RATE));
-            sensor.setGatewayDeviceId(cloud.getId());
+            sensor.setGatewayDeviceId(edge.getId());
             sensor.setLatency(1.0);
             sensors.add(sensor);
         }
