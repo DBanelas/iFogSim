@@ -23,16 +23,6 @@ public class Metrics {
     int tuplesSentBySensors;
 
     /**
-     * Size of the future queue
-     */
-    int futureQueueSize;
-
-    /**
-     * Size of the deferred queue
-     */
-    int deferredQueueSize;
-
-    /**
      * Latency per application loop
      * Key: Application Loop ID
      * Value: Latency
@@ -115,22 +105,6 @@ public class Metrics {
         this.tuplesSentBySensors = tuplesSentBySensors;
     }
 
-    public int getFutureQueueSize() {
-        return futureQueueSize;
-    }
-
-    public void setFutureQueueSize(int futureQueueSize) {
-        this.futureQueueSize = futureQueueSize;
-    }
-
-    public int getDeferredQueueSize() {
-        return deferredQueueSize;
-    }
-
-    public void setDeferredQueueSize(int deferredQueueSize) {
-        this.deferredQueueSize = deferredQueueSize;
-    }
-
     public Map<String, Double> getLatencyPerAppLoop() {
         return latencyPerAppLoop;
     }
@@ -161,10 +135,6 @@ public class Metrics {
 
     public void setTuplesProcessedPerModule(Map<String, Integer> tuplesProcessedPerModule) {
         this.tuplesProcessedPerModule = tuplesProcessedPerModule;
-    }
-
-    public Map<String, Double> getThroughputPerModule() {
-        return throughputPerModule;
     }
 
     public void setThroughputPerModule(Map<String, Double> throughputPerModule) {
@@ -228,7 +198,6 @@ public class Metrics {
         JsonNode latencyPerTupleType = objectMapper.valueToTree(this.latencyPerTupleType);
         JsonNode energyConsumptionPerDevice = objectMapper.valueToTree(this.energyConsumptionPerDevice);
         JsonNode tuplesProcessedPerModule = objectMapper.valueToTree(this.tuplesProcessedPerModule);
-        JsonNode throughputPerModule = objectMapper.valueToTree(this.throughputPerModule);
         JsonNode recsInPerModule = objectMapper.valueToTree(this.recsInPerModule);
         JsonNode recsOutPerModule = objectMapper.valueToTree(this.recsOutPerModule);
         JsonNode remainingDataPerOperator = objectMapper.valueToTree(this.remainingDataPerOperator);
@@ -238,15 +207,12 @@ public class Metrics {
         rootNode.set("latencyPerTupleType", latencyPerTupleType);
         rootNode.set("energyConsumptionPerDevice", energyConsumptionPerDevice);
         rootNode.set("tuplesProcessedPerModule", tuplesProcessedPerModule);
-        rootNode.set("throughputPerModule", throughputPerModule);
         rootNode.set("recsInPerModule", recsInPerModule);
         rootNode.set("recsOutPerModule", recsOutPerModule);
-        rootNode.set("remainingEventsPerDevice", remainingDataPerOperator);
+        rootNode.set("remainingDataPerDevice", remainingDataPerOperator);
         rootNode.put("executionTime", executionTime);
         rootNode.put("networkUsage", networkUsage);
         rootNode.put("tuplesSentBySensors", tuplesSentBySensors);
-        rootNode.put("futureQueueSize", futureQueueSize);
-        rootNode.put("deferredQueueSize", deferredQueueSize);
         return rootNode.toPrettyString();
     }
 }
