@@ -106,7 +106,7 @@ public class Controller extends SimEntity{
 			setPlacement();
 			setExecutionTime();
 			setTupleTypeLatencies();
-			setAppLoopLatencies();
+			setAppLoopLatency();
 			setEnergyConsumptionPerDevice();
 			setNetworkUsage();
 			setTotalTuplesSentBySensorDevices();
@@ -281,12 +281,13 @@ public class Controller extends SimEntity{
 		metrics.setLatencyPerTupleType(tupleTypeLatencies);
 	}
 
-	private void setAppLoopLatencies() {
-		Map<String, Double> appLoopLatencies = new HashMap<>();
+	// In this implementation of the system only one AppLoop will exist
+	private void setAppLoopLatency() {
+		double loopLatency = 0.0;
 		for(Integer loopId : TimeKeeper.getInstance().getLoopIdToTupleIds().keySet()){
-			appLoopLatencies.put(getStringForLoopId(loopId), TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId));
+			loopLatency = TimeKeeper.getInstance().getLoopIdToCurrentAverage().get(loopId);
 		}
-		metrics.setLatencyPerAppLoop(appLoopLatencies);
+		metrics.setAppLoopLatency(loopLatency);
 	}
 
 	protected void manageResources(){

@@ -35,7 +35,7 @@ public class WorkflowTestSimple {
     static boolean TRACE_FLAG = false;
 
     public static void main(String[] args) {
-        Config.setMaxSimulationTime(5000);
+        Config.setMaxSimulationTime(100);
         Log.printLine("Starting WorkflowTest...");
         Logger.ENABLED = true;
 

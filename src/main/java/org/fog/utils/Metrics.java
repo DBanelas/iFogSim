@@ -2,9 +2,10 @@ package org.fog.utils;
 import java.util.Map;
 
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
-import com.fasterxml.jackson.databind.JsonNode;
+
 
 public class Metrics {
     /**
@@ -27,7 +28,7 @@ public class Metrics {
      * Key: Application Loop ID
      * Value: Latency
      */
-    Map<String, Double> latencyPerAppLoop;
+    double appLoopLatency;
 
     /**
      * Latency per tuple type
@@ -105,12 +106,12 @@ public class Metrics {
         this.tuplesSentBySensors = tuplesSentBySensors;
     }
 
-    public Map<String, Double> getLatencyPerAppLoop() {
-        return latencyPerAppLoop;
+    public double getAppLoopLatency() {
+        return appLoopLatency;
     }
 
-    public void setLatencyPerAppLoop(Map<String, Double> latencyPerAppLoop) {
-        this.latencyPerAppLoop = latencyPerAppLoop;
+    public void setAppLoopLatency(double appLoopLatency) {
+        this.appLoopLatency = appLoopLatency;
     }
 
     public Map<String, Double> getLatencyPerTupleType() {
@@ -194,7 +195,6 @@ public class Metrics {
     public String getJsonString() {
         ObjectMapper objectMapper = new ObjectMapper();
         ObjectNode rootNode = objectMapper.createObjectNode();
-        JsonNode latencyPerAppLoop = objectMapper.valueToTree(this.latencyPerAppLoop);
         JsonNode latencyPerTupleType = objectMapper.valueToTree(this.latencyPerTupleType);
         JsonNode energyConsumptionPerDevice = objectMapper.valueToTree(this.energyConsumptionPerDevice);
         JsonNode tuplesProcessedPerModule = objectMapper.valueToTree(this.tuplesProcessedPerModule);
@@ -203,7 +203,7 @@ public class Metrics {
         JsonNode remainingDataPerOperator = objectMapper.valueToTree(this.remainingDataPerOperator);
         JsonNode placement = objectMapper.valueToTree(this.placement);
         rootNode.set("placement", placement);
-        rootNode.set("latencyPerAppLoop", latencyPerAppLoop);
+        rootNode.put("appLoopLatency", this.appLoopLatency);
         rootNode.set("latencyPerTupleType", latencyPerTupleType);
         rootNode.set("energyConsumptionPerDevice", energyConsumptionPerDevice);
         rootNode.set("tuplesProcessedPerModule", tuplesProcessedPerModule);
