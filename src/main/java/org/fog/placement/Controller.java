@@ -186,6 +186,7 @@ public class Controller extends SimEntity{
 			for(Pair<Tuple, Integer> pair : northQueue){
 				Tuple tuple = pair.getFirst();
 				String moduleName = tuple.getSrcModuleName();
+				if (!unexecutedEvents.containsKey(moduleName)) continue;
 				long dataSize = tuple.getCloudletFileSize();
 				unexecutedEvents.put(moduleName, unexecutedEvents.get(moduleName) + dataSize);
 			}
